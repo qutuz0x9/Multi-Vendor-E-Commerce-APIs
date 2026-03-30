@@ -1,0 +1,10 @@
+<Solution>
+  <Project Path="src/MultiVendorECommerce.API/MultiVendorECommerce.API.csproj" />
+  <Project Path="src/MultiVendorECommerce.Application/MultiVendorECommerce.Application.csproj" />
+  <Project Path="src/MultiVendorECommerce.Domain/MultiVendorECommerce.Domain.csproj" />
+  <Project Path="src/MultiVendorECommerce.Infrastructure/MultiVendorECommerce.Infrastructure.csproj" />
+  <Project Path="src/MultiVendorECommerce.Shared/MultiVendorECommerce.Shared.csproj" />
+  <Project Path="test/MultiVendorECommerce.API.Test/MultiVendorECommerce.API.Test.csproj" />
+  <Project Path="test/MultiVendorECommerce.Application.Test/MultiVendorECommerce.Application.Test.csproj" />
+  <Project Path="test/MultiVendorECommerce.Infrastructure.Test/MultiVendorECommerce.Infrastructure.Test.csproj" />
+</Solution>
