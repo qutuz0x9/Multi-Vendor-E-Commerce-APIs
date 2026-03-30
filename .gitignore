@@ -1,0 +1,41 @@
+
+## Build Output
+bin/
+obj/
+*.dll
+*.exe
+*.app
+*.log
+*.pdb
+
+## User Specific Files
+*.user
+*.userosscache
+*.suo
+*.vsp
+*.vs/
+.vscode/
+
+## NuGetPackages
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+
+## Configuration Secrets
+appsettings.*.json
+secrets.json
+
+
+## Dotnet Core Specific
+*.db
+*.bak
+*.seed
+*.dotCover
+TestResults/
+
+## Other Temporary Files
+*.log
+*.cache
+*.swp
+*.tmp
