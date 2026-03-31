@@ -14,4 +14,14 @@
     <Folder Include="Profiles\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="16.1.1" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MultiVendorECommerce.Domain\MultiVendorECommerce.Domain.csproj" />
+    <ProjectReference Include="..\MultiVendorECommerce.Shared\MultiVendorECommerce.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
