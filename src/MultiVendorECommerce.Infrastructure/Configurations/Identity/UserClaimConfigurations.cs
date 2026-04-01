@@ -10,7 +10,6 @@ public class UserClaimConfigurations : IEntityTypeConfiguration<UserClaim>
     {
         builder.ToTable("UserClaim", "identity");
 
-        builder.Property(uc => uc.CreatedAt)
-            .HasDefaultValueSql("GETUTCDATE()");
+        builder.Property(uc => uc.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
     }
 }

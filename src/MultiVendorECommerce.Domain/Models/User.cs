@@ -10,4 +10,6 @@ public class User : IdentityUser<Guid>
     public DateTime? ModifiedAt { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
+
+    public Customer? Customer { get; set; }
 }
