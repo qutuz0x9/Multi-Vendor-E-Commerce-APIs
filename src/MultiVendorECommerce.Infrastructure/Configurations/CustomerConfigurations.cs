@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MultiVendorECommerce.Domain.Models;
 
-namespace MultiVendorECommerce.Infrastructure.Configurations.Identity;
+namespace MultiVendorECommerce.Infrastructure.Configurations;
 
 public class CustomerConfigurations : IEntityTypeConfiguration<Customer>
 {
