@@ -11,15 +11,9 @@ public class UserConfigurations : IEntityTypeConfiguration<User>
     {
         builder.ToTable("User", "identity");
 
-        builder.Property(u => u.Status)
-            .IsRequired()
-            .HasColumnType("user_status")
-            .HasDefaultValue(UserStatus.Active);
-
-        builder.Property(u => u.CreatedAt)
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
-        builder.Property(u => u.IsDeleted)
-            .HasDefaultValue(false);
+        builder.Property(u => u.Status).HasDefaultValue(UserStatus.Active);
+        builder.Property(u => u.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        builder.Property(u => u.IsDeleted).HasDefaultValue(false);
 
         builder.HasIndex(u => u.IsDeleted).HasDatabaseName("IX_User_IsDeleted");
 
