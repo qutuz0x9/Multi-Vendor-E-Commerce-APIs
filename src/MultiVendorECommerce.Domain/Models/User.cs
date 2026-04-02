@@ -12,4 +12,5 @@ public class User : IdentityUser<Guid>
     public DateTime? DeletedAt { get; set; }
 
     public Customer? Customer { get; set; }
+    public Vendor? Vendor { get; set; }
 }

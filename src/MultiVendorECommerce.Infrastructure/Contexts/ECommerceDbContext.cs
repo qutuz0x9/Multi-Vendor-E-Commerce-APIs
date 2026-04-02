@@ -17,6 +17,7 @@ public class ECommerceDbContext : IdentityDbContext<User, Role, Guid, UserClaim,
     {
         base.OnModelCreating(builder);
         builder.HasPostgresEnum<UserStatus>("user_status");
+        builder.HasPostgresEnum<VendorStatus>("vendor_status");
 
         builder.ApplyConfigurationsFromAssembly(typeof(ECommerceDbContext).Assembly);
     }

@@ -17,6 +17,7 @@ public static class InfrastructureConfigurations
                 {
                     npgsqlOptions.MigrationsAssembly(typeof(ECommerceDbContext).Assembly.FullName);
                     npgsqlOptions.MapEnum<UserStatus>("user_status");
+                    npgsqlOptions.MapEnum<VendorStatus>("vendor_status");
                 }));
 
         return services;
