@@ -16,7 +16,7 @@ public class BrandConfigurations : IEntityTypeConfiguration<Brand>
         builder.Property(b => b.Id).HasColumnName("Id").UseIdentityAlwaysColumn().ValueGeneratedOnAdd();
         builder.Property(b => b.Name).HasColumnName("Name").HasMaxLength(255).IsRequired();
         builder.Property(b => b.NormalizedName).HasColumnName("NormalizedName").HasMaxLength(255).IsRequired();
-        builder.Property(b => b.Status).HasColumnName("brand_status").HasDefaultValue(BrandStatus.Active);
+        builder.Property(b => b.Status).HasColumnName("Status").HasDefaultValue(BrandStatus.Active);
         builder.Property(b => b.Slug).HasColumnName("Slug").HasMaxLength(255).IsRequired();
         builder.Property(b => b.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("CURRENT_TIMESTAMP");
         builder.Property(b => b.ModifiedAt).HasColumnName("ModifiedAt");
