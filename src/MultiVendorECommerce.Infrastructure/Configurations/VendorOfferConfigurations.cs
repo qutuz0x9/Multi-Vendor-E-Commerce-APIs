@@ -39,5 +39,9 @@ public class VendorOfferConfigurations : IEntityTypeConfiguration<VendorOffer>
             .WithMany(v => v.VendorOffers)
             .HasForeignKey(vo => vo.VendorId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(vo => vo.CartItem)
+            .WithOne(ci => ci.VendorOffer)
+            .HasForeignKey<CartItem>(ci => ci.VendorOfferId);
     }
 }
