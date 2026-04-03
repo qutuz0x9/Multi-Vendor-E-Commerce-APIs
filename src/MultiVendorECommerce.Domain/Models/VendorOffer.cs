@@ -19,4 +19,5 @@ public class VendorOffer
     public Product? Product { get; set; } = null!;
     public Inventory Inventory { get; set; } = null!;
     public CartItem? CartItem { get; set; } = null!;
+    public OrderItem? OrderItem { get; set; } = null!;
 }
