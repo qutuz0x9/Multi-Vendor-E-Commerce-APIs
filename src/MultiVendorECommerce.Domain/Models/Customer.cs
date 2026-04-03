@@ -1,4 +1,6 @@
-﻿namespace MultiVendorECommerce.Domain.Models;
+﻿using Npgsql.Replication;
+
+namespace MultiVendorECommerce.Domain.Models;
 
 public class Customer
 {
@@ -14,4 +16,5 @@ public class Customer
     // Navigation properties
     public User User { get; set; } = null!;
     public CartSession CartSession { get; set; } = null!;
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
 }
