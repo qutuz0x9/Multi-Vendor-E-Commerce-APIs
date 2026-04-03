@@ -32,5 +32,9 @@ public class CustomerConfigurations : IEntityTypeConfiguration<Customer>
             .WithOne(u => u.Customer)
             .HasForeignKey<Customer>(c => c.UserId);
 
+        builder.HasOne(c => c.CartSession)
+            .WithOne(cs => cs.Customer)
+            .HasForeignKey<CartSession>(cs => cs.CustomerId);
+
     }
 }

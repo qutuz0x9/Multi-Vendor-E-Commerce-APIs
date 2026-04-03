@@ -10,5 +10,8 @@ public class Customer
     public DateTime? ModifiedAt { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
+
+    // Navigation properties
     public User User { get; set; } = null!;
+    public CartSession CartSession { get; set; } = null!;
 }
