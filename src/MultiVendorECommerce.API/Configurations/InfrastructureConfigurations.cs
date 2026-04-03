@@ -21,6 +21,10 @@ public static class InfrastructureConfigurations
                     npgsqlOptions.MapEnum<BrandStatus>("brand_status");
                     npgsqlOptions.MapEnum<ProductStatus>("product_status");
                     npgsqlOptions.MapEnum<CategoryStatus>("Category_status");
+                    npgsqlOptions.MapEnum<VendorOfferStatus>("vendor_offer_status");
+                    npgsqlOptions.MapEnum<InventoryStatus>("inventory_status");
+                    npgsqlOptions.MapEnum<OrderStatus>("order_status");
+                    npgsqlOptions.MapEnum<PaymentStatus>("payment_status");
                 }));
 
         return services;
