@@ -1,4 +1,5 @@
 ﻿using MultiVendorECommerce.Domain.Enums;
+using Npgsql.Replication;
 using System.Text.Json;
 
 namespace MultiVendorECommerce.Domain.Models;
@@ -20,4 +21,5 @@ public class Product
     // Navigation properties
     public Brand Brand { get; set; } = null!;
     public ICollection<ProductCategory> ProductCategories { get; set; } = new List<ProductCategory>();
+    public ICollection<VendorOffer> VendorOffers { get; set; } = new List<VendorOffer>();
 }

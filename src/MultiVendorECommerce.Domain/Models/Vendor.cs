@@ -18,4 +18,8 @@ public class Vendor
     public DateTime? DeletedAt { get; set; }
     public User User { get; set; } = null!;
 
+
+    // Navigation properties
+    public ICollection<VendorOffer> VendorOffers { get; set; } = new List<VendorOffer>();
+
 }
