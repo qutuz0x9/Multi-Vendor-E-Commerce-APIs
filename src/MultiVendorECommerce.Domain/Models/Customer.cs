@@ -17,4 +17,5 @@ public class Customer
     public User User { get; set; } = null!;
     public CartSession CartSession { get; set; } = null!;
     public ICollection<Order> Orders { get; set; } = new List<Order>();
+    public ICollection<CustomerAddress> Addresses { get; set; } = new List<CustomerAddress>();
 }
