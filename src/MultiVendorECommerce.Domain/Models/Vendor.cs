@@ -21,4 +21,5 @@ public class Vendor
     // Navigation properties
     public ICollection<VendorOffer> VendorOffers { get; set; } = new List<VendorOffer>();
     public User User { get; set; } = null!;
+    public ICollection<VendorAddress> VendorAddresses { get; set; } = new List<VendorAddress>();
 }
