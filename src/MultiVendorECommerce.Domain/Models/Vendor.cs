@@ -16,10 +16,9 @@ public class Vendor
     public DateTime? ModifiedAt { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime? DeletedAt { get; set; }
-    public User User { get; set; } = null!;
 
 
     // Navigation properties
     public ICollection<VendorOffer> VendorOffers { get; set; } = new List<VendorOffer>();
-
+    public User User { get; set; } = null!;
 }
