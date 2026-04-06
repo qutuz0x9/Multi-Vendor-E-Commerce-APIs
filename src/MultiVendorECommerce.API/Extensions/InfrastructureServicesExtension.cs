@@ -1,10 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Infrastructure.Contexts;
+namespace MultiVendorECommerce.API.Extensions;
 
-namespace MultiVendorECommerce.API.Configurations;
-
-public static class InfrastructureConfigurations
+public static class InfrastructureServicesExtension
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
