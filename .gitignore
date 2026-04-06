@@ -39,3 +39,7 @@ TestResults/
 *.cache
 *.swp
 *.tmp
+
+## Logs Files
+**/Logs/
+Logs/
