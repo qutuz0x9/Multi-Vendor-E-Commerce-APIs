@@ -18,10 +18,10 @@ SerilogConfigurations.ConfigureSerilog(builder);
 
 // Add services to the container.
 builder.Services.AddInfrastructureServices(builder.Configuration); // Add infrastructure services (e.g., database context, repositories, etc.)
+builder.Services.AddJwtService(builder.Configuration); // Add JWT authentication and authorization services
 builder.Services.AddLoggingServices(); // Add logging services (e.g., Serilog, NLog, etc.)
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
-
 
 var app = builder.Build();
 
@@ -49,6 +49,7 @@ app.UseSerilogRequestLogging(opts =>
 });
 
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 try
