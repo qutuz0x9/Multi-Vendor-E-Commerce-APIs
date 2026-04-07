@@ -13,4 +13,6 @@ public class User : IdentityUser<Guid>
 
     public Customer? Customer { get; set; }
     public Vendor? Vendor { get; set; }
+
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }
