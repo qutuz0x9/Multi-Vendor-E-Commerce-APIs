@@ -1,6 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MultiVendorECommerce.Application.Interfaces;
+using MultiVendorECommerce.Application.Interfaces.Services;
+using MultiVendorECommerce.Application.Services;
 using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Infrastructure.Contexts;
+using MultiVendorECommerce.Infrastructure.Services;
+using MultiVendorECommerce.Infrastructure.UnitOfWork;
 namespace MultiVendorECommerce.API.Extensions;
 
 public static class InfrastructureServicesExtension
@@ -27,6 +32,10 @@ public static class InfrastructureServicesExtension
                     npgsqlOptions.MapEnum<CustomerAddressType>("customer_address_type");
                     npgsqlOptions.MapEnum<VendorAddressType>("vendor_address_type");
                 }));
+
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IJwtService, JwtService>();
 
         return services;
     }
