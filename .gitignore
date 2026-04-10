@@ -15,6 +15,7 @@ obj/
 *.vsp
 *.vs/
 .vscode/
+.github/
 
 ## NuGetPackages
 packages/
