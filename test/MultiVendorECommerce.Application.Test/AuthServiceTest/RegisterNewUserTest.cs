@@ -270,4 +270,44 @@ public class RegisterNewUserTest
         result.Errors[1].ErrorMessage.Should().Be("Error 2");
         result.StatusCode.Should().Be(500);
     }
+
+    [Fact]
+    public async Task RegisterNewUser_WhenCustomerRoleDoesNotExist_ShouldCreateRole()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "testuser@email",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+
+        // Setup CreateAsync to return Success when called with any User and the specified password
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Success);
+        // Setup RoleExistsAsync to return false to simulate the role not existing
+        _roleManagerMock
+        .Setup(r => r.RoleExistsAsync(Roles.Customer))
+        .ReturnsAsync(false);
+        // Setup CreateAsync for RoleManager to return Success when called with a Role that has the correct name
+        _roleManagerMock
+        .Setup(r => r.CreateAsync(It.Is<Role>(role => role.Name == Roles.Customer)))
+        .ReturnsAsync(IdentityResult.Success);
+        // Setup AddToRoleAsync to return Success when called with any User and the specified role
+        _userManagerMock
+        .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
+        .ReturnsAsync(IdentityResult.Success);
+
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
+        _roleManagerMock.Verify(r => r.CreateAsync(It.Is<Role>(role => role.Name == Roles.Customer)), Times.Once);
+        _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+        result.IsSuccess.Should().BeTrue();
+    }
 }
