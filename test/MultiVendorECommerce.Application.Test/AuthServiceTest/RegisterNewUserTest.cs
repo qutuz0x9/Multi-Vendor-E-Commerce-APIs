@@ -310,4 +310,39 @@ public class RegisterNewUserTest
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
         result.IsSuccess.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task RegisterNewUser_WhenCustomerRoleAlreadyExists_ShouldNotCreateRole()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "testuser@email",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+
+        // Setup CreateAsync to return Success when called with any User and the specified password
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Success);
+        // Setup RoleExistsAsync to return true to simulate the role already existing
+        _roleManagerMock
+        .Setup(r => r.RoleExistsAsync(Roles.Customer))
+        .ReturnsAsync(true);
+        // Setup AddToRoleAsync to return Success when called with any User and the specified role
+        _userManagerMock
+        .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
+        .ReturnsAsync(IdentityResult.Success);
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
+        _roleManagerMock.Verify(r => r.CreateAsync(It.IsAny<Role>()), Times.Never);
+        _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+        result.IsSuccess.Should().BeTrue();
+    }
 }
