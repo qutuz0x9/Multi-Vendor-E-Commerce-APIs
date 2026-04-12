@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using MultiVendorECommerce.Application.Interfaces;
+using MultiVendorECommerce.Application.Interfaces.Infrastructure;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Settings;
 using System.IdentityModel.Tokens.Jwt;
@@ -10,11 +10,11 @@ using System.Text;
 
 namespace MultiVendorECommerce.Infrastructure.Services;
 
-public class JwtService : IJwtService
+public class TokenService : ITokenService
 {
     private readonly JwtSettings _jwtSettings;
 
-    public JwtService(IOptions<JwtSettings> jwtSettings) => _jwtSettings = jwtSettings.Value;
+    public TokenService(IOptions<JwtSettings> jwtSettings) => _jwtSettings = jwtSettings.Value;
     public string GenerateAccessToken(User user, IList<string> roles)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));

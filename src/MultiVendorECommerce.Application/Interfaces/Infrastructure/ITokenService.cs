@@ -1,9 +1,10 @@
 ﻿using MultiVendorECommerce.Domain.Models;
 using System.Security.Claims;
 
-namespace MultiVendorECommerce.Application.Interfaces;
+namespace MultiVendorECommerce.Application.Interfaces.Infrastructure;
 
-public interface IJwtService
+public interface ITokenService
+
 {
     string GenerateAccessToken(User user, IList<string> roles);
     string GenerateRefreshToken();

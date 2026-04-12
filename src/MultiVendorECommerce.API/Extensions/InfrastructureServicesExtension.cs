@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using MultiVendorECommerce.Application.Interfaces;
+using MultiVendorECommerce.Application.Interfaces.Infrastructure;
 using MultiVendorECommerce.Application.Interfaces.Services;
 using MultiVendorECommerce.Application.Services;
 using MultiVendorECommerce.Domain.Enums;
@@ -35,7 +35,8 @@ public static class InfrastructureServicesExtension
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<ICookieService, CookieService>();
 
         return services;
     }

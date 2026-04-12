@@ -1,4 +1,4 @@
-﻿using MultiVendorECommerce.Application.Interfaces;
+﻿using MultiVendorECommerce.Application.Interfaces.Infrastructure;
 using MultiVendorECommerce.Infrastructure.Services;
 using MultiVendorECommerce.Shared.Settings;
 using MultiVendorECommerce.Domain.Models;
@@ -15,7 +15,7 @@ public static class JwtServiceExtension
     public static IServiceCollection AddJwtService(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-        services.AddScoped<IJwtService, JwtService>();
+        services.AddScoped<ITokenService, TokenService>();
         services.AddIdentity<User, Role>(options =>
         {
             options.Password.RequireDigit = true;

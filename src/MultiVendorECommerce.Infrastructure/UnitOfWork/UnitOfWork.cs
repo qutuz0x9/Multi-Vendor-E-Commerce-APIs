@@ -1,4 +1,4 @@
-using MultiVendorECommerce.Application.Interfaces;
+using MultiVendorECommerce.Application.Interfaces.Infrastructure;
 using MultiVendorECommerce.Application.Interfaces.Repositories;
 using MultiVendorECommerce.Infrastructure.Contexts;
 using MultiVendorECommerce.Infrastructure.Repositories;

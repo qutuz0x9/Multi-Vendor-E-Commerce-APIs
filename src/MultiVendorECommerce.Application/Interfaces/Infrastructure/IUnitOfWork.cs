@@ -1,6 +1,6 @@
 using MultiVendorECommerce.Application.Interfaces.Repositories;
 
-namespace MultiVendorECommerce.Application.Interfaces;
+namespace MultiVendorECommerce.Application.Interfaces.Infrastructure;
 
 public interface IUnitOfWork : IAsyncDisposable
 {
