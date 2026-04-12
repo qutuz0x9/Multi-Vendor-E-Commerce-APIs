@@ -8,6 +8,8 @@ using MultiVendorECommerce.Domain.Models;
 using AutoMapper;
 using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Shared.Constants;
+using MultiVendorECommerce.Application.Interfaces.Infrastructure;
+using MultiVendorECommerce.Shared.Enums;
 
 namespace MultiVendorECommerce.Application.Test.AuthServiceTest;
 
@@ -17,6 +19,9 @@ public class RegisterNewUserTest
     private readonly Mock<RoleManager<Role>> _roleManagerMock;
     private readonly IAuthService _authService;
     private readonly IMapper _mapper;
+    private readonly Mock<ITokenService> _tokenServiceMock;
+    private readonly Mock<ICookieService> _cookieServiceMock;
+
 
     public RegisterNewUserTest()
     {
@@ -41,7 +46,15 @@ public class RegisterNewUserTest
             null!                        // ILogger<RoleManager<Role>>
         );
         _mapper = MapperTestHelper.GetMapper();
-        _authService = new AuthService(_userManagerMock.Object, _roleManagerMock.Object, _mapper);
+        _tokenServiceMock = new Mock<ITokenService>();
+        _cookieServiceMock = new Mock<ICookieService>();
+        _authService = new AuthService(
+        _userManagerMock.Object,
+        _roleManagerMock.Object,
+        _mapper,
+        _tokenServiceMock.Object,
+        _cookieServiceMock.Object
+        );
     }
 
 
@@ -49,18 +62,22 @@ public class RegisterNewUserTest
     /// Impement Happy path test for RegisterNewUser method in AuthService.
     /// This test should verify that when valid data is provided,
     /// the method returns a success result with the expected AuthResponseDTO.
+    /// Steps to Register New User:
+    /// 1) Check If There is User with this Email or Username (Should be Null)
+    /// 2) Create User with the Request Data
+    /// 3) Assign Customer Role For this User
+    /// 4) Generate Token For This User
+    /// 5) Return Result with the Expected Response DTO
     /// </summary>
-    /// <returns></returns>
     [Fact]
     public async Task RegisterNewUser_WithValidData_ShouldReturnSuccess()
     {
-
         // ── 1) ARRANGE ────────────────────────────────────────────────────────────
         // Create Request Object (Here I have the Request, So the next step is to check for the data
         var request = new RegisterUserDTO
         {
             Username = "testuser",
-            Email = "test@gmail",
+            Email = "test@gmail.com",
             Password = "test@123",
             PasswordConfirm = "test@123"
         };
@@ -70,7 +87,7 @@ public class RegisterNewUserTest
         _userManagerMock
             .Setup(u => u.FindByEmailAsync(request.Email))
             .ReturnsAsync((User?)null);
-        // The Actual Return Should Be Null, So taht it's prove there is no user with this username
+        // The Actual Return Should Be Null, So that it's prove there is no user with this username
         _userManagerMock
             .Setup(u => u.FindByNameAsync(request.Username))
             .ReturnsAsync((User?)null);
@@ -86,13 +103,76 @@ public class RegisterNewUserTest
         _userManagerMock
         .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
         .ReturnsAsync(IdentityResult.Success);
-        
+        // Setup the GenerateAccessToken method to return a dummy token when called with any User and list of roles
+        _tokenServiceMock
+        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
+        .Returns("dummy_token");
+        // Setup GetRolesAsync to return the Customer role after assignment
+        _userManagerMock
+        .Setup(u => u.GetRolesAsync(It.IsAny<User>()))
+        .ReturnsAsync(new List<string> { Roles.Customer });
+
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        // Call the RegisterUser method with the request object and capture the result
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        // Verify that the UserManager's FindByEmailAsync method was called once with the correct email
+        _userManagerMock.Verify(u => u.FindByEmailAsync(request.Email), Times.Once);
+        // Verify that the UserManager's FindByNameAsync method was called once with the correct username
+        _userManagerMock.Verify(u => u.FindByNameAsync(request.Username), Times.Once);
+        // Verify that the UserManager's CreateAsync method was called once with any User and the correct password
+        _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
+        // Verify that the RoleManager's RoleExistsAsync method was called once with the correct role
+        _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
+        // Verify that the UserManager's AddToRoleAsync method was called once with any User and the correct role
+        _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+        // Verify that the TokenService's GenerateAccessToken method was called once with any User and any list of roles
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()), Times.Once);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.UserId.Should().NotBeEmpty();
+        result.Value.UserName.Should().Be(request.Username);
+        result.Value.Role.Should().Be(Roles.Customer);
+        result.Value.Token.Should().Be("dummy_token");
+    }
+
+    [Fact]
+    public async Task RegisterNewUser_WithDuplicateEmail_ShouldReturnFailure()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        // Create Request Object
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "test@gmail.com",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+        // Create an existing user with the same email to simulate a duplicate email scenario
+        var existingUser = new User { Id = Guid.NewGuid(), Email = request.Email, UserName = "anotheruser" };
+
+        // Setup FindByEmailAsync to return an existing user (simulating a duplicate)
+        _userManagerMock
+            .Setup(u => u.FindByEmailAsync(request.Email))
+            .ReturnsAsync(existingUser);
+
         // ── 2) ACT ────────────────────────────────────────────────────────────
         var result = await _authService.RegisterUser(request);
 
         // ── 3) ASSERT ────────────────────────────────────────────────────────────
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Should().NotBeNull();
-        result.Value!.UserName.Should().Be(request.Username);
+        // Verify FindByEmailAsync was called and CreateAsync was never reached
+        _userManagerMock.Verify(u => u.FindByEmailAsync(request.Email), Times.Once);
+        _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+
+        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().HaveCount(1);
+        result.Errors[0].Type.Should().Be(ErrorType.Validation);
+        result.StatusCode.Should().Be(400);
     }
+
+     
 }
