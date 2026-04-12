@@ -1,14 +1,4 @@
-﻿using Npgsql.Replication;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace MultiVendorECommerce.Application.DTOs.Auth;
-
-
-
-
-
+﻿namespace MultiVendorECommerce.Application.DTOs.Auth;
 public class RegisterResponseDTO
 {
     public Guid UserId { get; set; }

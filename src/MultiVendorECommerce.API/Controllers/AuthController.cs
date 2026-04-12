@@ -30,10 +30,11 @@ public class AuthController(IAuthService authService) : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
-    //[HttpPost("vendor/register")]
-    //public async Task<ActionResult<Result<RegisterResponseDTO>>> RegisterVendor([FromBody] RegisterVendorDTO request)
-    //{
+    // [HttpPost("vendor/register")]
+    // public async Task<ActionResult<Result<RegisterResponseDTO>>> RegisterVendor([FromBody] RegisterVendorDTO request)
+    // {
     //    var result = await _authService.RegisterVendor(request);
     //    return StatusCode(result.StatusCode, result);
-    //}
+    // }
 }
+
