@@ -236,4 +236,38 @@ public class RegisterNewUserTest
         result.Errors[0].Type.Should().Be(ErrorType.Failure);
         result.StatusCode.Should().Be(500);
     }
+    [Fact]
+    public async Task RegisterNewUser_WhenCreationReturnsMultipleErrors_ShouldAggregateErrors()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "testuser@email",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Failed(
+            new IdentityError { Description = "Error 1" },
+            new IdentityError { Description = "Error 2" }
+        ));
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
+
+        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().HaveCount(2);
+        result.Errors[0].Type.Should().Be(ErrorType.Failure);
+        result.Errors[0].ErrorMessage.Should().Be("Error 1");
+        result.Errors[1].Type.Should().Be(ErrorType.Failure);
+        result.Errors[1].ErrorMessage.Should().Be("Error 2");
+        result.StatusCode.Should().Be(500);
+    }
 }
