@@ -174,5 +174,38 @@ public class RegisterNewUserTest
         result.StatusCode.Should().Be(400);
     }
 
-     
+    [Fact]
+    public async Task RegisterNewUser_WithDuplicateUsername_ShouldReturnFailure()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        // Create Request Object
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "test@gmail.com",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+        // Create an existing user with the same username to simulate a duplicate username scenario
+        var existingUser = new User { Id = Guid.NewGuid(), Email = "another@gmail.com", UserName = request.Username };
+
+        // Setup FindByNameAsync to return an existing user (simulating a duplicate username)
+        _userManagerMock
+        .Setup(u => u.FindByNameAsync(request.Username))
+        .ReturnsAsync(existingUser);
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        // Verify FindByNameAsync was called and CreateAsync was never reached
+        _userManagerMock.Verify(u => u.FindByNameAsync(request.Username), Times.Once);
+        _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+
+        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().HaveCount(1);
+        result.Errors[0].Type.Should().Be(ErrorType.Validation);
+        result.StatusCode.Should().Be(400);
+    }
 }
