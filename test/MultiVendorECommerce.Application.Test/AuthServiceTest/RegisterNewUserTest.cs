@@ -208,4 +208,32 @@ public class RegisterNewUserTest
         result.Errors[0].Type.Should().Be(ErrorType.Validation);
         result.StatusCode.Should().Be(400);
     }
+    [Fact]
+    public async Task RegisterNewUser_WhenUserCreationFails_ShouldReturnFailure()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "testuser@email",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "User creation failed." }));
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
+
+        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().HaveCount(1);
+        result.Errors[0].Type.Should().Be(ErrorType.Failure);
+        result.StatusCode.Should().Be(500);
+    }
 }
