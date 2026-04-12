@@ -345,4 +345,91 @@ public class RegisterNewUserTest
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
         result.IsSuccess.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task RegisterNewUser_WhenRoleAssignmentFails_ShouldReturn500Failure()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "testuser@email",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+
+        // Setup CreateAsync to return Success when called with any User and the specified password
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Success);
+        // Setup RoleExistsAsync to return true to simulate the role existing
+        _roleManagerMock
+        .Setup(r => r.RoleExistsAsync(Roles.Customer))
+        .ReturnsAsync(true);
+        // Setup AddToRoleAsync to return Failed to simulate a role assignment failure
+        _userManagerMock
+        .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
+        .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Role assignment failed." }));
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
+        _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
+        _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+
+        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().HaveCount(1);
+        result.Errors[0].Type.Should().Be(ErrorType.Failure);
+        result.Errors[0].ErrorMessage.Should().Be("Failed to assign role to user.");
+        result.StatusCode.Should().Be(500);
+    }
+    [Fact]
+    public async Task RegisterNewUser_WhenRoleAssignmentFails_ShouldNotGenerateToken()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "testuser@email",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+
+        // Setup CreateAsync to return Success when called with any User and the specified password
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Success);
+        // Setup RoleExistsAsync to return true to simulate the role existing
+        _roleManagerMock
+        .Setup(r => r.RoleExistsAsync(Roles.Customer))
+        .ReturnsAsync(true);
+        // Setup AddToRoleAsync to return Failed to simulate a role assignment failure
+        _userManagerMock
+        .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
+        .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Role assignment failed." }));
+
+        _tokenServiceMock
+        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
+        .Returns("dummy_token");
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
+        _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
+        _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()), Times.Never);
+
+        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().HaveCount(1);
+        result.Errors[0].Type.Should().Be(ErrorType.Failure);
+        result.Errors[0].ErrorMessage.Should().Be("Failed to assign role to user.");
+        result.StatusCode.Should().Be(500);
+    }
+
 }
