@@ -104,8 +104,8 @@ public class AuthService(
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
-            var errors = result.Errors.Select(e => Error.Validation(e.Description));
-            return Result<User>.Failure(errors, 400);
+            var errors = result.Errors.Select(e => Error.Failure(e.Description));
+            return Result<User>.Failure(errors, 500);
         }
         return Result<User>.Success(user);
     }
