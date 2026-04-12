@@ -431,5 +431,43 @@ public class RegisterNewUserTest
         result.Errors[0].ErrorMessage.Should().Be("Failed to assign role to user.");
         result.StatusCode.Should().Be(500);
     }
+    [Fact]
+    public async Task RegisterNewUser_WithValidData_ShouldCallGenerateAccessTokenWithCorrectRoles()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "testuser@email",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
 
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Success);
+        _roleManagerMock
+        .Setup(r => r.RoleExistsAsync(Roles.Customer))
+        .ReturnsAsync(true);
+        _userManagerMock
+        .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
+        .ReturnsAsync(IdentityResult.Success);
+        _userManagerMock
+        .Setup(u => u.GetRolesAsync(It.IsAny<User>()))
+        .ReturnsAsync(new List<string> { Roles.Customer });
+        _tokenServiceMock
+        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
+        .Returns("dummy_token");
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
+        _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
+        _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.Is<IList<string>>(roles => roles.Contains(Roles.Customer))), Times.Once);
+
+        result.IsSuccess.Should().BeTrue();
+    }
 }
