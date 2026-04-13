@@ -20,6 +20,7 @@ public interface IUnitOfWork : IAsyncDisposable
     ICartSessionRepository CartSessions { get; }
     ICartItemRepository CartItems { get; }
     IOrderShippingAddressRepository OrderShippingAddresses { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync();
     Task<bool> BeginTransactionAsync();

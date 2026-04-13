@@ -27,6 +27,7 @@ public class UnitOfWork : IUnitOfWork
     private ICartSessionRepository? _cartSessionRepository;
     private ICartItemRepository? _cartItemRepository;
     private IOrderShippingAddressRepository? _orderShippingAddressRepository;
+    private IRefreshTokenRepository? _refreshTokenRepository;
 
     public UnitOfWork(ECommerceDbContext context)
     {
@@ -80,6 +81,9 @@ public class UnitOfWork : IUnitOfWork
 
     public IOrderShippingAddressRepository OrderShippingAddresses =>
         _orderShippingAddressRepository ??= new OrderShippingAddressRepository(_context);
+
+    public IRefreshTokenRepository RefreshTokens =>
+        _refreshTokenRepository ??= new RefreshTokenRepository(_context);
 
     public async Task<int> SaveChangesAsync()
     {
