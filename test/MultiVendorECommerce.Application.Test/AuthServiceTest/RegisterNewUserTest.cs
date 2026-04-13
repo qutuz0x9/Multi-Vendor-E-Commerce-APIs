@@ -9,6 +9,7 @@ using AutoMapper;
 using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Shared.Constants;
 using MultiVendorECommerce.Application.Interfaces.Infrastructure;
+using MultiVendorECommerce.Application.Interfaces.Repositories;
 using MultiVendorECommerce.Shared.Enums;
 
 namespace MultiVendorECommerce.Application.Test.AuthServiceTest;
@@ -17,6 +18,8 @@ public class RegisterNewUserTest
 {
     private readonly Mock<UserManager<User>> _userManagerMock;
     private readonly Mock<RoleManager<Role>> _roleManagerMock;
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ICustomerRepository> _customerRepositoryMock;
     private readonly IAuthService _authService;
     private readonly IMapper _mapper;
     private readonly Mock<ITokenService> _tokenServiceMock;
@@ -48,9 +51,19 @@ public class RegisterNewUserTest
         _mapper = MapperTestHelper.GetMapper();
         _tokenServiceMock = new Mock<ITokenService>();
         _cookieServiceMock = new Mock<ICookieService>();
+        _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _customerRepositoryMock = new Mock<ICustomerRepository>();
+
+        // Setup transaction methods on UnitOfWork
+        _unitOfWorkMock.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(true);
+        _unitOfWorkMock.Setup(u => u.CommitTransactionAsync()).ReturnsAsync(true);
+        _unitOfWorkMock.Setup(u => u.RollbackTransactionAsync()).ReturnsAsync(true);
+        _unitOfWorkMock.Setup(u => u.Customers).Returns(_customerRepositoryMock.Object);
+
         _authService = new AuthService(
         _userManagerMock.Object,
         _roleManagerMock.Object,
+        _unitOfWorkMock.Object,
         _mapper,
         _tokenServiceMock.Object,
         _cookieServiceMock.Object
@@ -131,6 +144,16 @@ public class RegisterNewUserTest
         // Verify that the TokenService's GenerateAccessToken method was called once with any User and any list of roles
         _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()), Times.Once);
 
+        // Verify transaction was committed and never rolled back
+        _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Never);
+
+        // Verify customer profile was created
+        _customerRepositoryMock.Verify(c => c.AddAsync(It.Is<Customer>(
+            cust => cust.UserId != Guid.Empty && cust.FirstName == request.Username
+        )), Times.Once);
+
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
         result.Value!.UserId.Should().NotBeEmpty();
@@ -167,6 +190,11 @@ public class RegisterNewUserTest
         _userManagerMock.Verify(u => u.FindByEmailAsync(request.Email), Times.Once);
         _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
 
+        // Verify transaction was rolled back and never committed
+        _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
+
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().HaveCount(1);
@@ -202,6 +230,11 @@ public class RegisterNewUserTest
         _userManagerMock.Verify(u => u.FindByNameAsync(request.Username), Times.Once);
         _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
 
+        // Verify transaction was rolled back and never committed
+        _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
+
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().HaveCount(1);
@@ -229,6 +262,11 @@ public class RegisterNewUserTest
 
         // ── 3) ASSERT ────────────────────────────────────────────────────────────
         _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
+
+        // Verify transaction was rolled back and never committed
+        _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
 
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
@@ -269,6 +307,10 @@ public class RegisterNewUserTest
         result.Errors[1].Type.Should().Be(ErrorType.Failure);
         result.Errors[1].ErrorMessage.Should().Be("Error 2");
         result.StatusCode.Should().Be(500);
+
+        // Verify transaction was rolled back and never committed
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
     }
 
     [Fact]
@@ -308,6 +350,11 @@ public class RegisterNewUserTest
         _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
         _roleManagerMock.Verify(r => r.CreateAsync(It.Is<Role>(role => role.Name == Roles.Customer)), Times.Once);
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+
+        // Verify transaction was committed
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Never);
+
         result.IsSuccess.Should().BeTrue();
     }
 
@@ -343,6 +390,11 @@ public class RegisterNewUserTest
         _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
         _roleManagerMock.Verify(r => r.CreateAsync(It.IsAny<Role>()), Times.Never);
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+
+        // Verify transaction was committed
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Never);
+
         result.IsSuccess.Should().BeTrue();
     }
 
@@ -378,6 +430,11 @@ public class RegisterNewUserTest
         _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
         _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
+
+        // Verify transaction was rolled back and never committed
+        _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
 
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
@@ -424,6 +481,10 @@ public class RegisterNewUserTest
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
         _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()), Times.Never);
 
+        // Verify transaction was rolled back and never committed
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
+
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().HaveCount(1);
@@ -469,5 +530,114 @@ public class RegisterNewUserTest
         _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.Is<IList<string>>(roles => roles.Contains(Roles.Customer))), Times.Once);
 
         result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RegisterNewUser_WithValidData_ShouldCreateCustomerProfile()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "test@gmail.com",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+
+        _userManagerMock
+            .Setup(u => u.FindByEmailAsync(request.Email))
+            .ReturnsAsync((User?)null);
+        _userManagerMock
+            .Setup(u => u.FindByNameAsync(request.Username))
+            .ReturnsAsync((User?)null);
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Success);
+        _roleManagerMock
+        .Setup(r => r.RoleExistsAsync(Roles.Customer))
+        .ReturnsAsync(true);
+        _userManagerMock
+        .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
+        .ReturnsAsync(IdentityResult.Success);
+        _userManagerMock
+        .Setup(u => u.GetRolesAsync(It.IsAny<User>()))
+        .ReturnsAsync(new List<string> { Roles.Customer });
+        _tokenServiceMock
+        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
+        .Returns("dummy_token");
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _customerRepositoryMock.Verify(c => c.AddAsync(It.Is<Customer>(
+            cust => cust.UserId != Guid.Empty
+                && cust.FirstName == request.Username
+                && cust.LastName == request.Username
+        )), Times.Once);
+
+        result.IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RegisterNewUser_WhenRoleAssignmentFails_ShouldNotCreateCustomerProfile()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "testuser@email",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+
+        _userManagerMock
+        .Setup(u => u.CreateAsync(It.IsAny<User>(), request.Password))
+        .ReturnsAsync(IdentityResult.Success);
+        _roleManagerMock
+        .Setup(r => r.RoleExistsAsync(Roles.Customer))
+        .ReturnsAsync(true);
+        _userManagerMock
+        .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
+        .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Role assignment failed." }));
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _customerRepositoryMock.Verify(c => c.AddAsync(It.IsAny<Customer>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
+
+        result.IsFailure.Should().BeTrue();
+        result.StatusCode.Should().Be(500);
+    }
+
+    [Fact]
+    public async Task RegisterNewUser_WhenDuplicateEmail_ShouldNotCreateCustomerProfile()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new RegisterUserDTO
+        {
+            Username = "testuser",
+            Email = "test@gmail.com",
+            Password = "test@123",
+            PasswordConfirm = "test@123"
+        };
+        var existingUser = new User { Id = Guid.NewGuid(), Email = request.Email, UserName = "anotheruser" };
+
+        _userManagerMock
+            .Setup(u => u.FindByEmailAsync(request.Email))
+            .ReturnsAsync(existingUser);
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────
+        var result = await _authService.RegisterUser(request);
+
+        // ── 3) ASSERT ────────────────────────────────────────────────────────────
+        _customerRepositoryMock.Verify(c => c.AddAsync(It.IsAny<Customer>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
+
+        result.IsFailure.Should().BeTrue();
     }
 }
