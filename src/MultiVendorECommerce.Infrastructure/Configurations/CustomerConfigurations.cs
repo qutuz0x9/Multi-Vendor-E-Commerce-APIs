@@ -28,13 +28,8 @@ public class CustomerConfigurations : IEntityTypeConfiguration<Customer>
 
 
         // Relationships
-        builder.HasOne(c => c.User)
-            .WithOne(u => u.Customer)
-            .HasForeignKey<Customer>(c => c.UserId);
-
-        builder.HasOne(c => c.CartSession)
-            .WithOne(cs => cs.Customer)
-            .HasForeignKey<CartSession>(cs => cs.CustomerId);
+        builder.HasOne(c => c.User).WithOne(u => u.Customer).HasForeignKey<Customer>(c => c.UserId);
+        builder.HasOne(c => c.CartSession).WithOne(cs => cs.Customer).HasForeignKey<CartSession>(cs => cs.CustomerId);
 
     }
 }

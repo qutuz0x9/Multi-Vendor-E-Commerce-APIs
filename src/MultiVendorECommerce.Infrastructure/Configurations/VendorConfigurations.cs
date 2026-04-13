@@ -13,17 +13,12 @@ public class VendorConfigurations : IEntityTypeConfiguration<Vendor>
         builder.ToTable("Vendor", "vendor");
 
         builder.HasKey(v => v.Id);
-        builder.Property(v => v.Id)
-            .HasColumnName("Id")
-            .HasDefaultValueSql("gen_random_uuid()")
-            .IsRequired();
-        builder.Property(v => v.Slug)
-            .HasColumnName("Slug")
-            .HasMaxLength(255)
-            .IsRequired(false);
+        builder.Property(v => v.Id).HasColumnName("Id").HasDefaultValueSql("gen_random_uuid()").IsRequired();
+        builder.Property(v => v.Slug).HasColumnName("Slug").HasMaxLength(255).IsRequired(false);
 
 
         builder.Property(v => v.BusinessName).HasColumnName("BusinessName").HasMaxLength(255).IsRequired();
+        builder.Property(v => v.UserId).HasColumnName("UserId").IsRequired();
         builder.Property(v => v.WebsiteUrl).HasColumnName("WebsiteUrl").HasMaxLength(255).IsRequired();
         builder.Property(v => v.Status).HasDefaultValue(VendorStatus.Pending);
         builder.Property(v => v.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("CURRENT_TIMESTAMP");
@@ -38,9 +33,9 @@ public class VendorConfigurations : IEntityTypeConfiguration<Vendor>
         builder.HasIndex(v => v.BusinessName).IsUnique().HasDatabaseName("IX_Vendor_BusinessName");
         builder.HasIndex(v => v.WebsiteUrl).IsUnique().HasDatabaseName("IX_Vendor_WebsiteUrl");
         builder.HasIndex(v => v.IsDeleted).HasDatabaseName("IX_Vendor_IsDeleted");
-
+        builder.HasIndex(v => v.UserId).IsUnique().HasDatabaseName("IX_Vendor_UserId");
         // Relationships
-        builder.HasOne(v => v.User).WithOne(u => u.Vendor).HasForeignKey<Vendor>(v => v.Id);
+        builder.HasOne(v => v.User).WithOne(u => u.Vendor).HasForeignKey<Vendor>(v => v.UserId);
 
     }
 }

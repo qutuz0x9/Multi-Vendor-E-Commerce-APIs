@@ -6,6 +6,7 @@ namespace MultiVendorECommerce.Domain.Models;
 public class Vendor
 {
     public Guid Id { get; set; }
+    public Guid UserId { get; set; }
     public string BusinessName { get; set; } = null!;
     public string WebsiteUrl { get; set; } = null!;
     public VendorStatus Status { get; set; }
