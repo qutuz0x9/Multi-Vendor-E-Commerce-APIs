@@ -20,6 +20,7 @@ public class RegisterNewVendorTest
     private readonly Mock<RoleManager<Role>> _roleManagerMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IVendorRepository> _vendorRepositoryMock;
+    private readonly Mock<IRefreshTokenRepository> _refreshTokenRepositoryMock;
     private readonly IAuthService _authService;
     private readonly IMapper _mapper;
     private readonly Mock<ITokenService> _tokenServiceMock;
@@ -58,6 +59,9 @@ public class RegisterNewVendorTest
         _unitOfWorkMock.Setup(u => u.CommitTransactionAsync()).ReturnsAsync(true);
         _unitOfWorkMock.Setup(u => u.RollbackTransactionAsync()).ReturnsAsync(true);
         _unitOfWorkMock.Setup(u => u.Vendors).Returns(_vendorRepositoryMock.Object);
+        _refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
+        _unitOfWorkMock.Setup(u => u.RefreshTokens).Returns(_refreshTokenRepositoryMock.Object);
+        _tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("dummy_refresh_token");
 
         _authService = new AuthService(
             _userManagerMock.Object,
