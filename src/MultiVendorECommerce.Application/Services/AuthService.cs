@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using MultiVendorECommerce.Application.DTOs.Auth;
 using MultiVendorECommerce.Application.Interfaces.Infrastructure;
@@ -9,8 +8,6 @@ using MultiVendorECommerce.Shared.Constants;
 using MultiVendorECommerce.Shared.Helpers;
 using MultiVendorECommerce.Shared.Results;
 using MultiVendorECommerce.Shared.Utils;
-
-
 
 namespace MultiVendorECommerce.Application.Services;
 
@@ -34,83 +31,116 @@ public class AuthService(
 
     public async Task<Result<RegisterResponseDTO>> RegisterUser(RegisterUserDTO request)
     {
-        // 1) Use Common Register Service
-        var registerResult = await Register(request);
-        if (registerResult.IsFailure)
-            return Result<RegisterResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
-
-        var user = registerResult.Value!;
-
-        // 2) Assign Customer Role For this User
-        if (!await _roleManager.RoleExistsAsync(Roles.Customer))
+        await _unitOfWork.BeginTransactionAsync();
+        try
         {
-            await _roleManager.CreateAsync(new Role { Name = Roles.Customer });
+            // 1) Use Common Register Service
+            var registerResult = await Register(request);
+            if (registerResult.IsFailure)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return Result<RegisterResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
+            }
+
+            var user = registerResult.Value!;
+
+            // 2) Assign Customer Role For this User
+            var roleResult = await AssignRole(user, Roles.Customer);
+            if (roleResult.IsFailure)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return Result<RegisterResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
+            }
+
+            // 3) Create Customer Profile
+            await CreateCustomerProfile(user, request);
+
+            // 4) Generate Token For This User
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = _tokenService.GenerateAccessToken(user, roles);
+
+            // 5) Commit Transaction
+            await _unitOfWork.CommitTransactionAsync();
+
+            var response = new RegisterResponseDTO
+            {
+                UserId = user.Id,
+                UserName = user.UserName!,
+                Role = Roles.Customer,
+                Token = token
+            };
+            return Result<RegisterResponseDTO>.Success(response);
         }
-        var roleResult = await _userManager.AddToRoleAsync(user, Roles.Customer);
-        if (!roleResult.Succeeded)
-            return Result<RegisterResponseDTO>.Failure(Error.Failure("Failed to assign role to user."), 500);
-
-        // 3) Generate Token For This User
-        var roles = await _userManager.GetRolesAsync(user);
-        var token = _tokenService.GenerateAccessToken(user, roles);
-        await CreateCustomerProfile(user, request);
-        var response = new RegisterResponseDTO
+        catch
         {
-            UserId = user.Id,
-            UserName = user.UserName!,
-            Role = Roles.Customer,
-            Token = token
-        };
-        // 4) Return Result
-        return Result<RegisterResponseDTO>.Success(response);
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
     }
 
     public async Task<Result<RegisterResponseDTO>> RegisterVendor(RegisterVendorDTO request)
     {
-        // 1) Use Common Register Service
-        var registerResult = await Register(request);
-        if (registerResult.IsFailure)
-            return Result<RegisterResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
-
-        var user = registerResult.Value!;
-
-        // 2) Assign Vendor Role For this User
-        if (!await _roleManager.RoleExistsAsync(Roles.Vendor))
+        await _unitOfWork.BeginTransactionAsync();
+        try
         {
-            await _roleManager.CreateAsync(new Role { Name = Roles.Vendor });
+            // 1) Use Common Register Service
+            var registerResult = await Register(request);
+            if (registerResult.IsFailure)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return Result<RegisterResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
+            }
+
+            var user = registerResult.Value!;
+
+            // 2) Assign Vendor Role For this User
+            var roleResult = await AssignRole(user, Roles.Vendor);
+            if (roleResult.IsFailure)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                return Result<RegisterResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
+            }
+
+            // 3) Create Vendor Profile
+            await CreateVendorProfile(user, request);
+
+            // 4) Generate Token For This User
+            var roles = await _userManager.GetRolesAsync(user);
+            var token = _tokenService.GenerateAccessToken(user, roles);
+
+            // 5) Commit Transaction
+            await _unitOfWork.CommitTransactionAsync();
+
+            var response = new RegisterResponseDTO
+            {
+                UserId = user.Id,
+                UserName = user.UserName!,
+                Role = Roles.Vendor,
+                Token = token
+            };
+            return Result<RegisterResponseDTO>.Success(response);
         }
-        var roleResult = await _userManager.AddToRoleAsync(user, Roles.Vendor);
-        if (!roleResult.Succeeded)
-            return Result<RegisterResponseDTO>.Failure(Error.Failure("Failed to assign role to user."), 500);
-
-        // 3) Generate Token For This User
-        var roles = await _userManager.GetRolesAsync(user);
-        var token = _tokenService.GenerateAccessToken(user, roles);
-        await CreateVendorProfile(user, request);
-        var response = new RegisterResponseDTO
+        catch
         {
-            UserId = user.Id,
-            UserName = user.UserName!,
-            Role = Roles.Vendor,
-            Token = token
-        };
-        // 4) Return Result
-        return Result<RegisterResponseDTO>.Success(response);
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
     }
 
+    private async Task<Result> AssignRole(User user, string roleName)
+    {
+        if (!await _roleManager.RoleExistsAsync(roleName))
+        {
+            await _roleManager.CreateAsync(new Role { Name = roleName });
+        }
 
+        var roleResult = await _userManager.AddToRoleAsync(user, roleName);
+        if (!roleResult.Succeeded)
+            return Result.Failure(Error.Failure("Failed to assign role to user."), 500);
 
-    /// <summary>
-    /// The function `Register` takes a `RegisterUserDTO` request, maps it to a `User`, creates a user
-    /// with the request data using `_userManager`, and returns the created user.
-    /// </summary>
-    /// <param name="RegisterUserDTO">RegisterUserDTO is a data transfer object (DTO) that contains the
-    /// information needed to register a new user. It likely includes properties such as username,
-    /// email, password, and any other relevant user details.</param>
-    /// <returns>
-    /// The method `Register` is returning a `Task<User>`, which is an asynchronous task that will
-    /// eventually produce a `User` object.
-    /// </returns>
+        return Result.Success();
+    }
+
     private async Task<Result<User>> Register(RegisterUserDTO request)
     {
         // 1) Check for duplicate email
@@ -147,7 +177,6 @@ public class AuthService(
             LastName = request.Username
         };
         await _unitOfWork.Customers.AddAsync(customer);
-        await _unitOfWork.SaveChangesAsync();
     }
 
     private async Task CreateVendorProfile(User user, RegisterVendorDTO request)
@@ -159,10 +188,8 @@ public class AuthService(
             BusinessName = request.Username,
             WebsiteUrl = $"https://{request.Username.ToLower()}.com",
             Slug = SlugHelper.GenerateSlug(request.Username)
-
         };
         await _unitOfWork.Vendors.AddAsync(vendor);
-        await _unitOfWork.SaveChangesAsync();
     }
 
 }
