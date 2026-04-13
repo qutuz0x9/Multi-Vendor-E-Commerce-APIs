@@ -29,7 +29,7 @@ public class AuthService(
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
 
-    public async Task<Result<RegisterResponseDTO>> RegisterUser(RegisterUserDTO request)
+    public async Task<Result<AuthResponseDTO>> RegisterUser(RegisterUserDTO request)
     {
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -39,7 +39,7 @@ public class AuthService(
             if (registerResult.IsFailure)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return Result<RegisterResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
+                return Result<AuthResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
             }
 
             var user = registerResult.Value!;
@@ -49,7 +49,7 @@ public class AuthService(
             if (roleResult.IsFailure)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return Result<RegisterResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
+                return Result<AuthResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
             }
 
             // 3) Create Customer Profile
@@ -73,14 +73,14 @@ public class AuthService(
             // 6) Commit Transaction
             await _unitOfWork.CommitTransactionAsync();
 
-            var response = new RegisterResponseDTO
+            var response = new AuthResponseDTO
             {
                 UserId = user.Id,
                 UserName = user.UserName!,
                 Role = Roles.Customer,
                 Token = token
             };
-            return Result<RegisterResponseDTO>.Success(response);
+            return Result<AuthResponseDTO>.Success(response);
         }
         catch
         {
@@ -89,7 +89,7 @@ public class AuthService(
         }
     }
 
-    public async Task<Result<RegisterResponseDTO>> RegisterVendor(RegisterVendorDTO request)
+    public async Task<Result<AuthResponseDTO>> RegisterVendor(RegisterVendorDTO request)
     {
         await _unitOfWork.BeginTransactionAsync();
         try
@@ -99,7 +99,7 @@ public class AuthService(
             if (registerResult.IsFailure)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return Result<RegisterResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
+                return Result<AuthResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
             }
 
             var user = registerResult.Value!;
@@ -109,7 +109,7 @@ public class AuthService(
             if (roleResult.IsFailure)
             {
                 await _unitOfWork.RollbackTransactionAsync();
-                return Result<RegisterResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
+                return Result<AuthResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
             }
 
             // 3) Create Vendor Profile
@@ -133,14 +133,14 @@ public class AuthService(
             // 6) Commit Transaction
             await _unitOfWork.CommitTransactionAsync();
 
-            var response = new RegisterResponseDTO
+            var response = new AuthResponseDTO
             {
                 UserId = user.Id,
                 UserName = user.UserName!,
                 Role = Roles.Vendor,
                 Token = token
             };
-            return Result<RegisterResponseDTO>.Success(response);
+            return Result<AuthResponseDTO>.Success(response);
         }
         catch
         {

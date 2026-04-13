@@ -1,5 +1,5 @@
 ﻿namespace MultiVendorECommerce.Application.DTOs.Auth;
-public class RegisterResponseDTO
+public class AuthResponseDTO
 {
     public Guid UserId { get; set; }
     public string UserName { get; set; } = string.Empty;

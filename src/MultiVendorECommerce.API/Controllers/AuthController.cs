@@ -24,14 +24,14 @@ public class AuthController(IAuthService authService) : ControllerBase
     /// containing a `Result` object of type `RegisterResponseDTO`.
     /// </returns>
     [HttpPost("register")]
-    public async Task<ActionResult<Result<RegisterResponseDTO>>> RegisterCustomer([FromBody] RegisterUserDTO request)
+    public async Task<ActionResult<Result<AuthResponseDTO>>> RegisterCustomer([FromBody] RegisterUserDTO request)
     {
         var result = await _authService.RegisterUser(request);
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost("vendor/register")]
-    public async Task<ActionResult<Result<RegisterResponseDTO>>> RegisterVendor([FromBody] RegisterVendorDTO request)
+    public async Task<ActionResult<Result<AuthResponseDTO>>> RegisterVendor([FromBody] RegisterVendorDTO request)
     {
        var result = await _authService.RegisterVendor(request);
        return StatusCode(result.StatusCode, result);

@@ -5,7 +5,7 @@ namespace MultiVendorECommerce.Application.Interfaces.Services;
 
 public interface IAuthService
 {
-    Task<Result<RegisterResponseDTO>> RegisterUser(RegisterUserDTO request);
-    Task<Result<RegisterResponseDTO>> RegisterVendor(RegisterVendorDTO request);
+    Task<Result<AuthResponseDTO>> RegisterUser(RegisterUserDTO request);
+    Task<Result<AuthResponseDTO>> RegisterVendor(RegisterVendorDTO request);
 
 }

@@ -11,7 +11,7 @@ public class UserProfile : Profile
         .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Username))
         .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email)).ReverseMap();
 
-        CreateMap<User, RegisterResponseDTO>()
+        CreateMap<User, AuthResponseDTO>()
         .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
         .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
         .ForMember(dest => dest.Role, opt => opt.Ignore())
