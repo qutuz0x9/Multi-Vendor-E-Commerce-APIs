@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Security.Cryptography.X509Certificates;
+using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using MultiVendorECommerce.Application.DTOs.Auth;
 using MultiVendorECommerce.Application.Interfaces.Infrastructure;
@@ -7,6 +8,7 @@ using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Constants;
 using MultiVendorECommerce.Shared.Helpers;
 using MultiVendorECommerce.Shared.Results;
+using MultiVendorECommerce.Shared.Utils;
 
 
 
@@ -15,6 +17,7 @@ namespace MultiVendorECommerce.Application.Services;
 public class AuthService(
     UserManager<User> userManager,
     RoleManager<Role> roleManager,
+    IUnitOfWork unitOfWork,
     IMapper mapper,
     ITokenService tokenService,
     ICookieService cookieService
@@ -26,6 +29,7 @@ public class AuthService(
     private readonly IMapper _mapper = mapper;
     private readonly ITokenService _tokenService = tokenService;
     private readonly ICookieService _cookieService = cookieService;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
 
 
     public async Task<Result<RegisterResponseDTO>> RegisterUser(RegisterUserDTO request)
@@ -49,6 +53,7 @@ public class AuthService(
         // 3) Generate Token For This User
         var roles = await _userManager.GetRolesAsync(user);
         var token = _tokenService.GenerateAccessToken(user, roles);
+        await CreateCustomerProfile(user, request);
         var response = new RegisterResponseDTO
         {
             UserId = user.Id,
@@ -60,16 +65,38 @@ public class AuthService(
         return Result<RegisterResponseDTO>.Success(response);
     }
 
-    // public async Task<Result<RegisterResponseDTO>> RegisterVendor(RegisterVendorDTO request)
-    // {
-    //     // 1) Use Common Register Service
-    //     var vendor = await Register(request);
-    //     // 2) Assign Vendor Role For this User
+    public async Task<Result<RegisterResponseDTO>> RegisterVendor(RegisterVendorDTO request)
+    {
+        // 1) Use Common Register Service
+        var registerResult = await Register(request);
+        if (registerResult.IsFailure)
+            return Result<RegisterResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
 
+        var user = registerResult.Value!;
 
-    //     // 3) Return Result
-    //     return Result<RegisterResponseDTO>.Success();
-    // }
+        // 2) Assign Vendor Role For this User
+        if (!await _roleManager.RoleExistsAsync(Roles.Vendor))
+        {
+            await _roleManager.CreateAsync(new Role { Name = Roles.Vendor });
+        }
+        var roleResult = await _userManager.AddToRoleAsync(user, Roles.Vendor);
+        if (!roleResult.Succeeded)
+            return Result<RegisterResponseDTO>.Failure(Error.Failure("Failed to assign role to user."), 500);
+
+        // 3) Generate Token For This User
+        var roles = await _userManager.GetRolesAsync(user);
+        var token = _tokenService.GenerateAccessToken(user, roles);
+        await CreateVendorProfile(user, request);
+        var response = new RegisterResponseDTO
+        {
+            UserId = user.Id,
+            UserName = user.UserName!,
+            Role = Roles.Vendor,
+            Token = token
+        };
+        // 4) Return Result
+        return Result<RegisterResponseDTO>.Success(response);
+    }
 
 
 
@@ -109,4 +136,33 @@ public class AuthService(
         }
         return Result<User>.Success(user);
     }
+
+    private async Task CreateCustomerProfile(User user, RegisterUserDTO request)
+    {
+        var customer = new Customer
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            FirstName = request.Username,
+            LastName = request.Username
+        };
+        await _unitOfWork.Customers.AddAsync(customer);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    private async Task CreateVendorProfile(User user, RegisterVendorDTO request)
+    {
+        var vendor = new Vendor
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            BusinessName = request.Username,
+            WebsiteUrl = $"https://{request.Username.ToLower()}.com",
+            Slug = SlugHelper.GenerateSlug(request.Username)
+
+        };
+        await _unitOfWork.Vendors.AddAsync(vendor);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
 }
