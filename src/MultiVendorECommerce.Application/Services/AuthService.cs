@@ -59,7 +59,18 @@ public class AuthService(
             var roles = await _userManager.GetRolesAsync(user);
             var token = _tokenService.GenerateAccessToken(user, roles);
 
-            // 5) Commit Transaction
+            //5) Generate Refresh Token and Set It In HttpOnly Cookie
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            await _unitOfWork.RefreshTokens.AddAsync(new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            });
+            _cookieService.SetCookie("refreshToken", refreshToken, 7);
+
+            // 6) Commit Transaction
             await _unitOfWork.CommitTransactionAsync();
 
             var response = new RegisterResponseDTO
@@ -108,7 +119,18 @@ public class AuthService(
             var roles = await _userManager.GetRolesAsync(user);
             var token = _tokenService.GenerateAccessToken(user, roles);
 
-            // 5) Commit Transaction
+            //5) Generate Refresh Token and Set It In HttpOnly Cookie
+            var refreshToken = _tokenService.GenerateRefreshToken();
+            await _unitOfWork.RefreshTokens.AddAsync(new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Token = refreshToken,
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
+            });
+            _cookieService.SetCookie("refreshToken", refreshToken, 7);
+
+            // 6) Commit Transaction
             await _unitOfWork.CommitTransactionAsync();
 
             var response = new RegisterResponseDTO
