@@ -23,7 +23,6 @@ builder.Services.AddLoggingServices(); // Add Logging services (e.g., Serilog, N
 builder.Services.AddHelperPackages(); // Add Helper packages (e.g., AutoMapper, FluentValidation, etc.)
 builder.Services.AddControllers(); // Add Controllers (API endpoints)
 builder.Services.AddOpenApi(); // Add OpenAPI/Swagger services for API documentation and testing
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
