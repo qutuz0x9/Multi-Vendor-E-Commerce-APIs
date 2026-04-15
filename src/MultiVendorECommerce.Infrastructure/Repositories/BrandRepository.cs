@@ -11,6 +11,14 @@ public class BrandRepository : BaseRepository<Brand, int>, IBrandRepository
     {
     }
 
+    public override async Task DeleteAsync(Brand entity)
+    {
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        _dbSet.Update(entity);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<Brand?> GetBrandByNameAsync(string name)
     {
         return await _dbSet.FirstOrDefaultAsync(b => b.Name == name);
