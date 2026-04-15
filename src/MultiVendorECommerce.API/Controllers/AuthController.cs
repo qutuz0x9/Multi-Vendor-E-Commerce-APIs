@@ -33,8 +33,15 @@ public class AuthController(IAuthService authService) : ControllerBase
     [HttpPost("vendor/register")]
     public async Task<ActionResult<Result<AuthResponseDTO>>> RegisterVendor([FromBody] RegisterVendorDTO request)
     {
-       var result = await _authService.RegisterVendor(request);
-       return StatusCode(result.StatusCode, result);
+        var result = await _authService.RegisterVendor(request);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<Result<AuthResponseDTO>>> Login([FromBody] LoginRequestDTO request)
+    {
+        var result = await _authService.Login(request);
+        return StatusCode(result.StatusCode, result);
     }
 }
 
