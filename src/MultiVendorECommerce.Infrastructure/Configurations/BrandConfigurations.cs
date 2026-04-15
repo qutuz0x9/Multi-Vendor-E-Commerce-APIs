@@ -30,6 +30,7 @@ public class BrandConfigurations : IEntityTypeConfiguration<Brand>
         builder.HasIndex(b => b.IsDeleted).HasDatabaseName("IX_Brand_IsDeleted");
 
         // Global query filter to exclude soft-deleted records
+        builder.HasQueryFilter(b => !b.IsDeleted);
 
         // Relationships
         builder.HasMany(b => b.Products)
