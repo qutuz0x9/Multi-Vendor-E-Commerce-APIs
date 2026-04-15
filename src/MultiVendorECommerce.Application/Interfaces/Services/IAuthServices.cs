@@ -7,5 +7,6 @@ public interface IAuthService
 {
     Task<Result<AuthResponseDTO>> RegisterUser(RegisterUserDTO request);
     Task<Result<AuthResponseDTO>> RegisterVendor(RegisterVendorDTO request);
+    Task<Result<AuthResponseDTO>> Login(LoginRequestDTO request);
 
 }

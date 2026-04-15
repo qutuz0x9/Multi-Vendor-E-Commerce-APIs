@@ -214,4 +214,36 @@ public class AuthService(
         await _unitOfWork.Vendors.AddAsync(vendor);
     }
 
+    public async Task<Result<AuthResponseDTO>> Login(LoginRequestDTO request)
+    {
+        // 1) Find User By Email
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user is null)
+            return Result<AuthResponseDTO>.Failure(Error.Validation("Invalid email or password."), 400);
+        // 3) Check Password
+        var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
+        if (!passwordValid)
+            return Result<AuthResponseDTO>.Failure(Error.Validation("Invalid email or password."), 400);
+        // 4) Generate Token For This User
+        var roles = await _userManager.GetRolesAsync(user);
+        var token = _tokenService.GenerateAccessToken(user, roles);
+        // 5) Generate Refresh Token and Set It In HttpOnly Cookie
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        await _unitOfWork.RefreshTokens.AddAsync(new RefreshToken
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Token = refreshToken,
+            ExpiresAt = DateTime.UtcNow.AddDays(7)
+        });
+        // 6) Return Response
+        var response = new AuthResponseDTO
+        {
+            UserId = user.Id,
+            UserName = user.UserName!,
+            Role = roles.FirstOrDefault() ?? string.Empty,
+            Token = token
+        };
+        return Result<AuthResponseDTO>.Success(response);
+    }
 }
