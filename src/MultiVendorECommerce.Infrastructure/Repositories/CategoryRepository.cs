@@ -5,10 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MultiVendorECommerce.Infrastructure.Repositories;
 
-public class CategoryRepository : BaseRepository<Category, int>, ICategoryRepository
+public class CategoryRepository(ECommerceDbContext context) : BaseRepository<Category, int>(context), ICategoryRepository
 {
-    public CategoryRepository(ECommerceDbContext context) : base(context)
+    public override async Task DeleteAsync(Category entity)
     {
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        _dbSet.Update(entity);
+        await _context.SaveChangesAsync();
     }
 
     public async Task<Category?> GetCategoryByNameAsync(string name)
