@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
+using System.Text.Json;
 
 namespace MultiVendorECommerce.Infrastructure.Configurations;
 
@@ -16,6 +17,12 @@ public class ProductConfigurations : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Name).HasColumnName("Name").HasMaxLength(255).IsRequired();
         builder.Property(p => p.Description).HasColumnName("Description").HasMaxLength(1000);
         builder.Property(p => p.Status).HasColumnName("Status").HasDefaultValue(ProductStatus.Active);
+        builder.Property(p => p.BrandId).HasColumnName("BrandId").IsRequired();
+        builder.Property(p => p.Feature).HasColumnName("Feature").HasColumnType("jsonb")
+        .HasConversion(
+            v => v == null ? null : JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+            v => v == null ? null : JsonDocument.Parse(v)
+        );
         builder.Property(p => p.Slug).HasColumnName("Slug").HasMaxLength(255).IsRequired();
         builder.Property(p => p.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("CURRENT_TIMESTAMP");
         builder.Property(p => p.ModifiedAt).HasColumnName("ModifiedAt");
@@ -29,7 +36,7 @@ public class ProductConfigurations : IEntityTypeConfiguration<Product>
         builder.HasIndex(p => p.IsDeleted).HasDatabaseName("IX_Product_IsDeleted");
 
         // Global Query Filter for soft delete
-
+        builder.HasQueryFilter(p => !p.IsDeleted);
 
         // Relationships
         builder.HasOne(p => p.Brand)
