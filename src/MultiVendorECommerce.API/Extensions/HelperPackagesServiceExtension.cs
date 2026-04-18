@@ -13,6 +13,10 @@ public static class HelperPackagesServiceExtension
         services.AddAutoMapper(cfg =>
         {
             cfg.AddProfile(new UserProfile());
+            cfg.AddProfile(new BrandProfile());
+            cfg.AddProfile(new CategoryProfile());
+            cfg.AddProfile(new ProductProfile());
+            cfg.AddProfile(new ProductCategoryProfile());
             cfg.AddMaps(Assembly.GetExecutingAssembly());
         });
 
