@@ -11,6 +11,14 @@ public class ProductRepository : BaseRepository<Product, int>, IProductRepositor
     {
     }
 
+    public override async Task DeleteAsync(Product entity)
+    {
+        entity.IsDeleted = true;
+        entity.DeletedAt = DateTime.UtcNow;
+        _dbSet.Update(entity);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<IEnumerable<Product>> GetProductsByBrandAsync(int brandId)
     {
         return await _dbSet.Where(p => p.BrandId == brandId).ToListAsync();
