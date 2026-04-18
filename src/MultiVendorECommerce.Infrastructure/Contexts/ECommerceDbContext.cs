@@ -1,9 +1,10 @@
-﻿using System;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using MultiVendorECommerce.Domain.Enums;
+using Microsoft.Extensions.DependencyInjection;
 using MultiVendorECommerce.Domain.Models;
+using MultiVendorECommerce.Infrastructure.Seeds;
 
 namespace MultiVendorECommerce.Infrastructure.Contexts;
 
@@ -35,8 +36,21 @@ public class ECommerceDbContext : IdentityDbContext<User, Role, Guid, UserClaim,
     {
         base.OnModelCreating(builder);
 
-
         builder.ApplyConfigurationsFromAssembly(typeof(ECommerceDbContext).Assembly);
     }
-
 }
+
+public static class ECommerceDbContextSeedExtension
+{
+    public static async Task SeedDataAsync(this IApplicationBuilder app)
+    {
+        using var scope = app.ApplicationServices.CreateScope();
+
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+
+        await SeedRolesAsync.SeedAsync(roleManager);
+        await SeedAdminAsync.SeedAsync(userManager);
+    }
+}
+
