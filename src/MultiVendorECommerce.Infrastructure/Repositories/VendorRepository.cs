@@ -5,14 +5,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MultiVendorECommerce.Infrastructure.Repositories;
 
-public class VendorRepository : BaseRepository<Vendor, Guid>, IVendorRepository
+public class VendorRepository(ECommerceDbContext context) : BaseRepository<Vendor, Guid>(context), IVendorRepository
 {
-    public VendorRepository(ECommerceDbContext context) : base(context)
+    public async Task<Vendor?> GetVendorByIdAsync(Guid id)
     {
+        return await _dbSet.FirstOrDefaultAsync(v => v.UserId == id);
     }
-
     public async Task<Vendor?> GetVendorByBusinessNameAsync(string businessName)
     {
+
         return await _dbSet.FirstOrDefaultAsync(v => v.BusinessName == businessName);
     }
 
