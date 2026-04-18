@@ -1,5 +1,6 @@
 using MultiVendorECommerce.API.Configurations;
 using MultiVendorECommerce.API.Extensions;
+using MultiVendorECommerce.Infrastructure.Contexts;
 using Serilog;
 using MultiVendorECommerce.API.Middlewares;
 
@@ -52,6 +53,9 @@ app.UseSerilogRequestLogging(opts =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+await app.SeedDataAsync();
+
 try
 {
     Log.Information("Starting MultiVendor E-Commerce API");
