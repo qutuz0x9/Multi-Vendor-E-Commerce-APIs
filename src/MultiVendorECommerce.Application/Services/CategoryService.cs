@@ -34,12 +34,13 @@ public class CategoryService(IUnitOfWork unitOfWork, IMapper mapper) : ICategory
     {
         var categoryExists = await _unitOfWork.Categories.GetCategoryByNameAsync(request.Name);
         if (categoryExists != null)
-            return Result<CategoryDTO>.Failure(Error.Validation("A category with this name already exists."), 409);
+            return Result<CategoryDTO>.Failure(Error.Validation("A category with this name already exists."), 400);
 
         var category = new Category
         {
             Name = request.Name,
             Description = request.Description,
+            NormalizedName = request.Name.ToUpperInvariant(),
             Slug = SlugHelper.GenerateSlug(request.Name),
             Status = CategoryStatus.Active,
             CreatedAt = DateTime.UtcNow
@@ -59,10 +60,11 @@ public class CategoryService(IUnitOfWork unitOfWork, IMapper mapper) : ICategory
 
         var categoryExists = await _unitOfWork.Categories.GetCategoryByNameAsync(request.Name);
         if (categoryExists != null && categoryExists.Id != id)
-            return Result<CategoryDTO>.Failure(Error.Validation("A category with this name already exists."), 409);
+            return Result<CategoryDTO>.Failure(Error.Validation("A category with this name already exists."), 400);
 
         category.Name = request.Name;
         category.Description = request.Description;
+        category.NormalizedName = request.Name.ToUpperInvariant();
         category.Slug = SlugHelper.GenerateSlug(request.Name);
         category.Status = request.Status;
         category.ModifiedAt = DateTime.UtcNow;
