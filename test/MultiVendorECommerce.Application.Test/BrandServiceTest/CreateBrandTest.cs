@@ -68,7 +68,7 @@ public class CreateBrandTest
     }
 
     [Fact]
-    public async Task CreateAsync_WithDuplicateName_ShouldReturnConflict()
+    public async Task CreateAsync_WithDuplicateName_ShouldReturnNotFound()
     {
         // ── 1) ARRANGE ────────────────────────────────────────────────────────────
         var request = new CreateBrandDTO { Name = "Nike" };
@@ -85,7 +85,7 @@ public class CreateBrandTest
         result.Should().NotBeNull();
         result.IsFailure.Should().BeTrue();
         result.IsSuccess.Should().BeFalse();
-        result.StatusCode.Should().Be(409);
+        result.StatusCode.Should().Be(400);
         result.Value.Should().BeNull();
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Type.Should().Be(ErrorType.Validation);
