@@ -106,9 +106,8 @@ public class ProductService(IUnitOfWork unitOfWork, IMapper mapper) : IProductSe
     public async Task<Result<ProductDTO>> UpdateAsync(int id, UpdateProductDTO request)
     {
         var product = await _unitOfWork.Products.GetByIdAsync(id);
-        if (product is null || product.IsDeleted)
+        if (product is null)
             return Result<ProductDTO>.Failure(Error.NotFound("Product not found."));
-
         var brand = await _unitOfWork.Brands.GetByIdAsync(request.BrandId);
         if (brand is null)
             return Result<ProductDTO>.Failure(Error.NotFound("Brand not found."));
@@ -162,7 +161,7 @@ public class ProductService(IUnitOfWork unitOfWork, IMapper mapper) : IProductSe
     public async Task<Result> DeleteAsync(int id)
     {
         var product = await _unitOfWork.Products.GetByIdAsync(id);
-        if (product is null || product.IsDeleted)
+        if (product is null)
             return Result.Failure(Error.NotFound("Product not found."));
 
         await _unitOfWork.Products.DeleteAsync(product);
