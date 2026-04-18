@@ -73,7 +73,7 @@ public class CreateCategoryTest
     }
 
     [Fact]
-    public async Task CreateAsync_WithDuplicateName_ShouldReturnConflict()
+    public async Task CreateAsync_WithDuplicateName_ShouldReturnBadRequest()
     {
         // ── 1) ARRANGE ────────────────────────────────────────────────────────────
         var request = new CreateCategoryDTO
@@ -91,7 +91,7 @@ public class CreateCategoryTest
 
         // ── 3) ASSERT ─────────────────────────────────────────────────────────────
         result.IsFailure.Should().BeTrue();
-        result.StatusCode.Should().Be(409);
+        result.StatusCode.Should().Be(400);
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Type.Should().Be(ErrorType.Validation);
 
