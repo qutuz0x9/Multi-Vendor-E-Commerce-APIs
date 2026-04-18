@@ -60,7 +60,7 @@ public class ProductService(IUnitOfWork unitOfWork, IMapper mapper) : IProductSe
         var slug = SlugHelper.GenerateProductSlug(request.Name, request.Feature.HasValue ? JsonDocument.Parse(request.Feature.Value.GetRawText()) : null);
         var slugExists = await _unitOfWork.Products.GetProductBySlugAsync(slug);
         if (slugExists is not null)
-            return Result<ProductDTO>.Failure(Error.Validation("A product with this name already exists."), 409);
+            return Result<ProductDTO>.Failure(Error.Validation("A product with this name already exists."), 400);
 
         var categories = new List<Category>();
         foreach (var categoryId in request.CategoryIds)
@@ -115,7 +115,7 @@ public class ProductService(IUnitOfWork unitOfWork, IMapper mapper) : IProductSe
         var slug = SlugHelper.GenerateProductSlug(request.Name, request.Feature.HasValue ? JsonDocument.Parse(request.Feature.Value.GetRawText()) : null);
         var existingBySlug = await _unitOfWork.Products.GetProductBySlugAsync(slug);
         if (existingBySlug is not null && existingBySlug.Id != id)
-            return Result<ProductDTO>.Failure(Error.Validation("A product with this name already exists."), 409);
+            return Result<ProductDTO>.Failure(Error.Validation("A product with this name already exists."), 400);
 
         var categories = new List<Category>();
         foreach (var categoryId in request.CategoryIds)
