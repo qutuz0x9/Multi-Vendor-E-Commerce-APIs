@@ -28,6 +28,7 @@ public class VendorOfferConfigurations : IEntityTypeConfiguration<VendorOffer>
 
 
         // Global Query Filter for Soft Delete
+        builder.HasQueryFilter(vo => !vo.IsDeleted);
 
         // Relationships
         builder.HasOne(vo => vo.Product)
