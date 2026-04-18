@@ -34,6 +34,10 @@ public class VendorConfigurations : IEntityTypeConfiguration<Vendor>
         builder.HasIndex(v => v.WebsiteUrl).IsUnique().HasDatabaseName("IX_Vendor_WebsiteUrl");
         builder.HasIndex(v => v.IsDeleted).HasDatabaseName("IX_Vendor_IsDeleted");
         builder.HasIndex(v => v.UserId).IsUnique().HasDatabaseName("IX_Vendor_UserId");
+
+        // Global query filter for soft delete
+        builder.HasQueryFilter(v => !v.IsDeleted);
+
         // Relationships
         builder.HasOne(v => v.User).WithOne(u => u.Vendor).HasForeignKey<Vendor>(v => v.UserId);
 
