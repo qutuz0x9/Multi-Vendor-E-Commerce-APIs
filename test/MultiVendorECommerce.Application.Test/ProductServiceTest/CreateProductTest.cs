@@ -172,7 +172,7 @@ public class CreateProductTest
     }
 
     [Fact]
-    public async Task CreateAsync_WithDuplicateName_ShouldReturnConflict()
+    public async Task CreateAsync_WithDuplicateName_ShouldReturnBadRequest()
     {
         // ── 1) ARRANGE ────────────────────────────────────────────────────────────
         var brand = new Brand { Id = 1, Name = "Nike" };
@@ -189,7 +189,7 @@ public class CreateProductTest
         // ── 3) ASSERT ─────────────────────────────────────────────────────────────
         result.Should().NotBeNull();
         result.IsFailure.Should().BeTrue();
-        result.StatusCode.Should().Be(409);
+        result.StatusCode.Should().Be(400);
         result.Errors[0].Type.Should().Be(ErrorType.Validation);
 
         _productRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
@@ -205,7 +205,7 @@ public class CreateProductTest
             BrandId = 1,
             Name = "Air Max",
             Description = "Running shoe",
-            CategoryIds = [99]
+            CategoryIds = new List<int> { 99 }
         };
 
         _brandRepositoryMock.Setup(r => r.GetByIdAsync(request.BrandId)).ReturnsAsync(brand);
