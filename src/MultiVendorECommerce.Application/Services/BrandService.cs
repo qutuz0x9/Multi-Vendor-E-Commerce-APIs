@@ -34,7 +34,7 @@ public class BrandService(IUnitOfWork unitOfWork, IMapper mapper) : IBrandServic
     {
         var exists = await _unitOfWork.Brands.GetBrandByNameAsync(request.Name) != null;
         if (exists)
-            return Result<BrandDTO>.Failure(Error.Validation("A brand with this name already exists."), 409);
+            return Result<BrandDTO>.Failure(Error.Validation("A brand with this name already exists."), 400);
 
         var brand = new Brand
         {
