@@ -26,6 +26,8 @@ public class CustomerConfigurations : IEntityTypeConfiguration<Customer>
         builder.HasIndex(c => c.UserId).IsUnique().HasDatabaseName("IX_Customer_UserId");
         builder.HasIndex(c => c.IsDeleted).HasDatabaseName("IX_Customer_IsDeleted");
 
+        // Global query filter for soft delete
+        builder.HasQueryFilter(c => !c.IsDeleted);
 
         // Relationships
         builder.HasOne(c => c.User).WithOne(u => u.Customer).HasForeignKey<Customer>(c => c.UserId);
