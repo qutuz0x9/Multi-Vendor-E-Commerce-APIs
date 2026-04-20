@@ -332,7 +332,7 @@ sequenceDiagram
     DB-->>-Repo: Data
     Repo-->>-UoW: Entity
     UoW-->>-Service: Entity
-    Service-->>-Controller: Result&lt;DTO&gt;
+    Service-->>-Controller: "Result<DTO>"
     Controller-->>-Client: HTTP Response (StatusCode + Result)
 ```
 
