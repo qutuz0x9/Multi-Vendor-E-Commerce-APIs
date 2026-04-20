@@ -21,7 +21,7 @@ public class BrandRepository : BaseRepository<Brand, int>, IBrandRepository
 
     public async Task<Brand?> GetBrandByNameAsync(string name)
     {
-        return await _dbSet.FirstOrDefaultAsync(b => b.Name == name);
+        return await _dbSet.FirstOrDefaultAsync(b => b.NormalizedName == name.ToUpper());
     }
 
     public async Task<Brand?> GetBrandBySlugAsync(string slug)
