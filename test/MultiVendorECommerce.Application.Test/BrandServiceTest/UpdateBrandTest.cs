@@ -78,7 +78,7 @@ public class UpdateBrandTest
         result.StatusCode.Should().Be(200);
         result.Value.Should().NotBeNull();
         result.Value!.Name.Should().Be(request.Name);
-        
+
 
         _brandRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Brand>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
@@ -127,10 +127,17 @@ public class UpdateBrandTest
 
         // ── 3) ASSERT ─────────────────────────────────────────────────────────────
         result.Should().NotBeNull();
-        result.IsSuccess.Should().BeTrue();
-        result.StatusCode.Should().Be(200);
-        result.Value.Should().NotBeNull();
-        result.Value!.Name.Should().Be("Nike");
+        result.IsSuccess.Should().BeFalse();
+        result.IsFailure.Should().BeTrue();
+        result.StatusCode.Should().Be(400);
+        result.Value.Should().BeNull();
+        result.Errors.Should().HaveCount(1);
+
+        _brandRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Brand>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+        _brandRepositoryMock.Verify(r => r.GetBrandByNameAsync(request.Name), Times.Once);
+        _brandRepositoryMock.Verify(r => r.GetByIdAsync(1), Times.Once);
+        _brandRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Brand>()), Times.Never);
     }
 
     [Fact]
@@ -228,7 +235,7 @@ public class UpdateBrandTest
         // ── 3) ASSERT ─────────────────────────────────────────────────────────────
         result.Should().NotBeNull();
         result.IsFailure.Should().BeTrue();
-        result.StatusCode.Should().Be(409);
+        result.StatusCode.Should().Be(400);
         result.Value.Should().BeNull();
         result.Errors.Should().HaveCount(1);
         result.Errors[0].Type.Should().Be(ErrorType.Validation);
