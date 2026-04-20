@@ -33,7 +33,7 @@ public class CategoryService(IUnitOfWork unitOfWork, IMapper mapper) : ICategory
     public async Task<Result<CategoryDTO>> CreateAsync(CreateCategoryDTO request)
     {
         var categoryExists = await _unitOfWork.Categories.GetCategoryByNameAsync(request.Name);
-        if (categoryExists != null)
+        if (categoryExists is not null)
             return Result<CategoryDTO>.Failure(Error.Validation("A category with this name already exists."), 400);
 
         var category = new Category
@@ -47,7 +47,8 @@ public class CategoryService(IUnitOfWork unitOfWork, IMapper mapper) : ICategory
         };
 
         await _unitOfWork.Categories.AddAsync(category);
-        await _unitOfWork.SaveChangesAsync();
+        if (!await _unitOfWork.TrySaveChangesAsync())
+            return Result<CategoryDTO>.Failure(Error.Validation("A category with this name already exists."), 400);
 
         return Result<CategoryDTO>.Success(_mapper.Map<CategoryDTO>(category), 201);
     }
@@ -59,7 +60,7 @@ public class CategoryService(IUnitOfWork unitOfWork, IMapper mapper) : ICategory
             return Result<CategoryDTO>.Failure(Error.NotFound("Category not found."));
 
         var categoryExists = await _unitOfWork.Categories.GetCategoryByNameAsync(request.Name);
-        if (categoryExists != null && categoryExists.Id != id)
+        if (categoryExists is not null && categoryExists.Id != id)
             return Result<CategoryDTO>.Failure(Error.Validation("A category with this name already exists."), 400);
 
         category.Name = request.Name;
@@ -70,7 +71,8 @@ public class CategoryService(IUnitOfWork unitOfWork, IMapper mapper) : ICategory
         category.ModifiedAt = DateTime.UtcNow;
 
         await _unitOfWork.Categories.UpdateAsync(category);
-        await _unitOfWork.SaveChangesAsync();
+        if (!await _unitOfWork.TrySaveChangesAsync())
+            return Result<CategoryDTO>.Failure(Error.Validation("A category with this name already exists."), 400);
 
         return Result<CategoryDTO>.Success(_mapper.Map<CategoryDTO>(category));
     }
