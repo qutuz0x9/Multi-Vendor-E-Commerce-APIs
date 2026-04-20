@@ -54,7 +54,7 @@ public class BrandController(IBrandService brandService) : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
-    [HttpPut("{id:int}")]
+    [HttpPatch("{id:int}")]
     [ProducesResponseType(typeof(Result<BrandDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
