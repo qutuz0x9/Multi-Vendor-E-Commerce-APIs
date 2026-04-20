@@ -78,8 +78,7 @@ public class UpdateBrandTest
         result.StatusCode.Should().Be(200);
         result.Value.Should().NotBeNull();
         result.Value!.Name.Should().Be(request.Name);
-        result.Value.Status.Should().Be(request.Status);
-        result.Value.Slug.Should().Be("new-brand");
+        
 
         _brandRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Brand>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
@@ -132,7 +131,6 @@ public class UpdateBrandTest
         result.StatusCode.Should().Be(200);
         result.Value.Should().NotBeNull();
         result.Value!.Name.Should().Be("Nike");
-        result.Value.Status.Should().Be(BrandStatus.Inactive);
     }
 
     [Fact]

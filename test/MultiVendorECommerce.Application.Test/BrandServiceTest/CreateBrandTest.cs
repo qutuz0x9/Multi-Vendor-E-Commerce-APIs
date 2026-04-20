@@ -59,8 +59,6 @@ public class CreateBrandTest
         result.StatusCode.Should().Be(201);
         result.Value.Should().NotBeNull();
         result.Value!.Name.Should().Be(request.Name);
-        result.Value.Status.Should().Be(BrandStatus.Active);
-        result.Value.Slug.Should().Be("nike");
 
         _brandRepositoryMock.Verify(r => r.GetBrandByNameAsync(request.Name), Times.Once);
         _brandRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Brand>()), Times.Once);

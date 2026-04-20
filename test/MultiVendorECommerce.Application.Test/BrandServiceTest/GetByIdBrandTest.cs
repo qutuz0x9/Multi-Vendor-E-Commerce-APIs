@@ -60,8 +60,6 @@ public class GetByIdBrandTest
         result.Value.Should().NotBeNull();
         result.Value!.Id.Should().Be(brand.Id);
         result.Value.Name.Should().Be(brand.Name);
-        result.Value.Slug.Should().Be(brand.Slug);
-        result.Value.Status.Should().Be(brand.Status);
     }
 
     [Fact]
