@@ -17,7 +17,7 @@ public class CategoryRepository(ECommerceDbContext context) : BaseRepository<Cat
 
     public async Task<Category?> GetCategoryByNameAsync(string name)
     {
-        return await _dbSet.FirstOrDefaultAsync(c => c.Name == name);
+        return await _dbSet.FirstOrDefaultAsync(c => c.NormalizedName == name.ToUpper());
     }
 
     public async Task<Category?> GetCategoryBySlugAsync(string slug)
