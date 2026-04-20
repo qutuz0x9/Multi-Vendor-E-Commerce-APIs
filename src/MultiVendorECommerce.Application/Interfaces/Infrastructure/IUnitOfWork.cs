@@ -23,6 +23,8 @@ public interface IUnitOfWork : IAsyncDisposable
     IRefreshTokenRepository RefreshTokens { get; }
 
     Task<int> SaveChangesAsync();
+    /// <summary>Returns true on success, false when a unique-constraint violation is detected.</summary>
+    Task<bool> TrySaveChangesAsync();
     Task<bool> BeginTransactionAsync();
     Task<bool> CommitTransactionAsync();
     Task<bool> RollbackTransactionAsync();

@@ -1,8 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using MultiVendorECommerce.Application.Interfaces.Infrastructure;
 using MultiVendorECommerce.Application.Interfaces.Repositories;
 using MultiVendorECommerce.Infrastructure.Contexts;
 using MultiVendorECommerce.Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
 
 namespace MultiVendorECommerce.Infrastructure.UnitOfWork;
 
@@ -88,6 +90,19 @@ public class UnitOfWork : IUnitOfWork
     public async Task<int> SaveChangesAsync()
     {
         return await _context.SaveChangesAsync();
+    }
+
+    public async Task<bool> TrySaveChangesAsync()
+    {
+        try
+        {
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: "23505" })
+        {
+            return false;
+        }
     }
 
     public async Task<bool> BeginTransactionAsync()
