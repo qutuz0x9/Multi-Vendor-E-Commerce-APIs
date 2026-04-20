@@ -93,4 +93,30 @@ public class CreateBrandTest
         _brandRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Brand>()), Times.Never);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Never);
     }
+    [Fact]
+    public async Task CreateAsync_WithSimilerName_ShouldReturnNotFound()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        var request = new CreateBrandDTO { Name = "NIke" };
+        var existingBrand = new Brand { Id = 1, Name = "Nike", NormalizedName = "NIKE" };
+
+        _brandRepositoryMock
+            .Setup(r => r.GetBrandByNameAsync(request.Name))
+            .ReturnsAsync(existingBrand);
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────────
+        var result = await _brandService.CreateAsync(request);
+
+        // ── 3) ASSERT ─────────────────────────────────────────────────────────────
+        result.Should().NotBeNull();
+        result.IsFailure.Should().BeTrue();
+        result.IsSuccess.Should().BeFalse();
+        result.StatusCode.Should().Be(400);
+        result.Value.Should().BeNull();
+        result.Errors.Should().HaveCount(1);
+        result.Errors[0].Type.Should().Be(ErrorType.Validation);
+
+        _brandRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Brand>()), Times.Never);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+    }
 }
