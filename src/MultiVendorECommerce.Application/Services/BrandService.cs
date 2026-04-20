@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using MultiVendorECommerce.Application.DTOs.Brand;
 using MultiVendorECommerce.Application.Interfaces.Infrastructure;
 using MultiVendorECommerce.Application.Interfaces.Services;
@@ -44,9 +45,15 @@ public class BrandService(IUnitOfWork unitOfWork, IMapper mapper) : IBrandServic
             Status = BrandStatus.Active,
             CreatedAt = DateTime.UtcNow
         };
-
-        await _unitOfWork.Brands.AddAsync(brand);
-        await _unitOfWork.SaveChangesAsync();
+        try
+        {
+            await _unitOfWork.Brands.AddAsync(brand);
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex)
+        {
+            return Result<BrandDTO>.Failure(Error.Failure(ex.Message), 500);
+        }
 
         return Result<BrandDTO>.Success(_mapper.Map<BrandDTO>(brand), 201);
     }
