@@ -64,9 +64,9 @@ public class BrandService(IUnitOfWork unitOfWork, IMapper mapper) : IBrandServic
         if (brand is null || brand.IsDeleted)
             return Result<BrandDTO>.Failure(Error.NotFound("Brand not found."));
 
-        var nameConflict = await _unitOfWork.Brands.GetBrandByNameAsync(request.Name) != null && brand.NormalizedName != request.Name.ToUpperInvariant();
+        var nameConflict = await _unitOfWork.Brands.GetBrandByNameAsync(request.Name) != null;
         if (nameConflict)
-            return Result<BrandDTO>.Failure(Error.Validation("A brand with this name already exists."), 409);
+            return Result<BrandDTO>.Failure(Error.Validation("A brand with this name already exists."), 400);
 
         brand.Name = request.Name;
         brand.NormalizedName = request.Name.ToUpperInvariant();
