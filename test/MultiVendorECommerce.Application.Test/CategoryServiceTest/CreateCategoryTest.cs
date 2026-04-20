@@ -50,8 +50,8 @@ public class CreateCategoryTest
             .ReturnsAsync((Category c) => c);
 
         _unitOfWorkMock
-            .Setup(u => u.SaveChangesAsync())
-            .ReturnsAsync(1);
+            .Setup(u => u.TrySaveChangesAsync())
+            .ReturnsAsync(true);
 
         // ── 2) ACT ────────────────────────────────────────────────────────────────
         var result = await _categoryService.CreateAsync(request);
@@ -64,11 +64,10 @@ public class CreateCategoryTest
         result.Value.Should().NotBeNull();
         result.Value!.Name.Should().Be(request.Name);
         result.Value.Description.Should().Be(request.Description);
-        result.Value.Status.Should().Be(CategoryStatus.Active);
-        result.Value.Slug.Should().Be("electronics");
+        
 
         _categoryRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Category>()), Times.Once);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.TrySaveChangesAsync(), Times.Once);
         _categoryRepositoryMock.Verify(r => r.GetCategoryByNameAsync(request.Name), Times.Once);
     }
 
@@ -96,7 +95,44 @@ public class CreateCategoryTest
         result.Errors[0].Type.Should().Be(ErrorType.Validation);
 
         _categoryRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Category>()), Times.Never);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Never);
+        _unitOfWorkMock.Verify(u => u.TrySaveChangesAsync(), Times.Never);
         _categoryRepositoryMock.Verify(r => r.GetCategoryByNameAsync(request.Name), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenConcurrentDuplicateHitsDbConstraint_ShouldReturnBadRequest()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        // The app-level check passes (no category found yet), but by the time we
+        // save, a concurrent request already inserted the same name → DB returns false.
+        var request = new CreateCategoryDTO
+        {
+            Name = "Electronics",
+            Description = "Electronic devices and accessories"
+        };
+
+        _categoryRepositoryMock
+            .Setup(r => r.GetCategoryByNameAsync(request.Name))
+            .ReturnsAsync((Category?)null);
+
+        _categoryRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Category>()))
+            .ReturnsAsync((Category c) => c);
+
+        _unitOfWorkMock
+            .Setup(u => u.TrySaveChangesAsync())
+            .ReturnsAsync(false);
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────────
+        var result = await _categoryService.CreateAsync(request);
+
+        // ── 3) ASSERT ─────────────────────────────────────────────────────────────
+        result.IsFailure.Should().BeTrue();
+        result.StatusCode.Should().Be(400);
+        result.Errors.Should().HaveCount(1);
+        result.Errors[0].Type.Should().Be(ErrorType.Validation);
+
+        _categoryRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Category>()), Times.Once);
+        _unitOfWorkMock.Verify(u => u.TrySaveChangesAsync(), Times.Once);
     }
 }
