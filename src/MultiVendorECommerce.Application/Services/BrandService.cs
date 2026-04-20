@@ -50,9 +50,9 @@ public class BrandService(IUnitOfWork unitOfWork, IMapper mapper) : IBrandServic
             await _unitOfWork.Brands.AddAsync(brand);
             await _unitOfWork.SaveChangesAsync();
         }
-        catch (DbUpdateException ex)
+        catch (DbUpdateException)
         {
-            return Result<BrandDTO>.Failure(Error.Failure(ex.Message), 500);
+            return Result<BrandDTO>.Failure(Error.Validation("A brand with this name already exists."), 409);
         }
 
         return Result<BrandDTO>.Success(_mapper.Map<BrandDTO>(brand), 201);
@@ -64,20 +64,26 @@ public class BrandService(IUnitOfWork unitOfWork, IMapper mapper) : IBrandServic
         if (brand is null || brand.IsDeleted)
             return Result<BrandDTO>.Failure(Error.NotFound("Brand not found."));
 
-        var nameConflict = await _unitOfWork.Brands.GetBrandByNameAsync(request.Name) != null;
-        if (nameConflict)
-            return Result<BrandDTO>.Failure(Error.Validation("A brand with this name already exists."), 400);
+        var existing = await _unitOfWork.Brands.GetBrandByNameAsync(request.Name);
+        if (existing != null && existing.Id != id)
+            return Result<BrandDTO>.Failure(Error.Validation("A brand with this name already exists."), 409);
 
         brand.Name = request.Name;
         brand.NormalizedName = request.Name.ToUpperInvariant();
         brand.Slug = SlugHelper.GenerateSlug(request.Name);
         brand.Status = request.Status;
         brand.ModifiedAt = DateTime.UtcNow;
+        try
+        {
+            await _unitOfWork.Brands.UpdateAsync(brand);
+            await _unitOfWork.SaveChangesAsync();
+            return Result<BrandDTO>.Success(_mapper.Map<BrandDTO>(brand));
+        }
+        catch (DbUpdateException)
+        {
+            return Result<BrandDTO>.Failure(Error.Validation("A brand with this name already exists."), 409);
+        }
 
-        await _unitOfWork.Brands.UpdateAsync(brand);
-        await _unitOfWork.SaveChangesAsync();
-
-        return Result<BrandDTO>.Success(_mapper.Map<BrandDTO>(brand));
     }
 
     public async Task<Result> DeleteAsync(int id)
