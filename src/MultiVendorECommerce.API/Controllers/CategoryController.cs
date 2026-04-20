@@ -104,7 +104,7 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
     /// The Update method is returning an ActionResult with a Result object containing a CategoryDTO. The
     /// method can return different HTTP status codes based on the outcome of the operation:
     /// </returns>
-    [HttpPut("{id:int}")]
+    [HttpPatch("{id:int}")]
     [ProducesResponseType(typeof(Result<CategoryDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status400BadRequest)]
