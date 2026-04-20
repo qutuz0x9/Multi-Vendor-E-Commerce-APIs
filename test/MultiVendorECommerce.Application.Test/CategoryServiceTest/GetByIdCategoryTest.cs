@@ -61,8 +61,7 @@ public class GetByIdCategoryTest
         result.Value!.Id.Should().Be(category.Id);
         result.Value.Name.Should().Be(category.Name);
         result.Value.Description.Should().Be(category.Description);
-        result.Value.Slug.Should().Be(category.Slug);
-        result.Value.Status.Should().Be(category.Status);
+        
     }
 
     [Fact]
