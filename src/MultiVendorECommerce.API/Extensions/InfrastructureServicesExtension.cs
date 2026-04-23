@@ -41,6 +41,7 @@ public static class InfrastructureServicesExtension
         services.AddScoped<IProductCategoryService, ProductCategoryService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICookieService, CookieService>();
+        services.AddScoped<IVendorOfferService, VendorOfferService>();
 
         return services;
     }
