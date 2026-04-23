@@ -17,6 +17,7 @@ public static class HelperPackagesServiceExtension
             cfg.AddProfile(new CategoryProfile());
             cfg.AddProfile(new ProductProfile());
             cfg.AddProfile(new ProductCategoryProfile());
+            cfg.AddProfile(new VendorOfferProfile());
             cfg.AddMaps(Assembly.GetExecutingAssembly());
         });
 
