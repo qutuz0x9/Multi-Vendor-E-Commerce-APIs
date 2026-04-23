@@ -23,13 +23,18 @@ builder.Services.AddJwtService(builder.Configuration); // Add JWT authentication
 builder.Services.AddLoggingServices(); // Add Logging services (e.g., Serilog, NLog, etc.)
 builder.Services.AddHelperPackages(); // Add Helper packages (e.g., AutoMapper, FluentValidation, etc.)
 builder.Services.AddControllers(); // Add Controllers (API endpoints)
-builder.Services.AddOpenApi(); // Add OpenAPI/Swagger services for API documentation and testing
+builder.Services.AddSwaggerServices(); // Add Swagger/OpenAPI services for API documentation and testing
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Multi Vendor E-Commerce API v1");
+        options.RoutePrefix = "swagger";
+    });
 }
 
 
