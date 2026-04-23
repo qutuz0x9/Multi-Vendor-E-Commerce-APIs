@@ -43,6 +43,12 @@ public class CreateProductTest
             .Setup(r => r.AddAsync(It.IsAny<ProductCategory>()))
             .ReturnsAsync((ProductCategory pc) => pc);
 
+        // Default transaction behavior
+        _unitOfWorkMock.Setup(u => u.BeginTransactionAsync()).ReturnsAsync(true);
+        _unitOfWorkMock.Setup(u => u.TrySaveChangesAsync()).ReturnsAsync(true);
+        _unitOfWorkMock.Setup(u => u.CommitTransactionAsync()).ReturnsAsync(true);
+        _unitOfWorkMock.Setup(u => u.RollbackTransactionAsync()).ReturnsAsync(true);
+
         _productService = new ProductService(_unitOfWorkMock.Object, _mapper);
     }
 
@@ -62,7 +68,7 @@ public class CreateProductTest
             Name = "Air Max",
             Description = "Running shoe",
             Feature = JsonDocument.Parse("""{"color":"red","size":"XL"}""").RootElement,
-            CategoryIds = new List<int> { 10, 20 }
+            CategoryIds = [10, 20]
         };
 
         foreach (var category in categories)
@@ -85,10 +91,6 @@ public class CreateProductTest
             .Callback<Product>(p => p.Id = 1)
             .ReturnsAsync((Product p) => p);
 
-        _unitOfWorkMock
-            .Setup(u => u.SaveChangesAsync())
-            .ReturnsAsync(1);
-
         // ── 2) ACT ────────────────────────────────────────────────────────────────
         var result = await _productService.CreateAsync(request);
 
@@ -110,7 +112,9 @@ public class CreateProductTest
         _categoryRepositoryMock.Verify(r => r.GetByIdAsync(10), Times.Once);
         _categoryRepositoryMock.Verify(r => r.GetByIdAsync(20), Times.Once);
         _productRepositoryMock.Verify(r => r.GetProductBySlugAsync("air-max-red-xl"), Times.Once);
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(), Times.Exactly(2)); // Once for product, once for categories
+        _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.TrySaveChangesAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Once);
     }
 
     [Fact]
@@ -135,8 +139,6 @@ public class CreateProductTest
             .Setup(r => r.AddAsync(It.IsAny<Product>()))
             .Callback<Product>(p => { p.Id = 1; capturedProduct = p; })
             .ReturnsAsync((Product p) => p);
-
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
         // ── 2) ACT ────────────────────────────────────────────────────────────────
         var result = await _productService.CreateAsync(request);
@@ -193,6 +195,8 @@ public class CreateProductTest
         result.Errors[0].Type.Should().Be(ErrorType.Validation);
 
         _productRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
+        _productRepositoryMock.Verify(r => r.GetProductBySlugAsync("air-max"), Times.Once);
+        _brandRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<int>()), Times.Once);
     }
 
     [Fact]
@@ -222,6 +226,8 @@ public class CreateProductTest
         result.Errors[0].Type.Should().Be(ErrorType.NotFound);
 
         _productRepositoryMock.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
+        _brandRepositoryMock.Verify(r => r.GetByIdAsync(request.BrandId), Times.Once);
+        _categoryRepositoryMock.Verify(r => r.GetByIdAsync(99), Times.Once);
     }
     [Fact]
     public async Task CreateAsync_WhenOneCategoryNotFound_ShouldReturnNotFound()
@@ -263,5 +269,39 @@ public class CreateProductTest
         _brandRepositoryMock.Verify(r => r.GetByIdAsync(request.BrandId), Times.Once);
         _categoryRepositoryMock.Verify(r => r.GetByIdAsync(99), Times.Once);
         _categoryRepositoryMock.Verify(r => r.GetByIdAsync(101), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WhenSlugRaceConditionOccurs_ShouldReturnValidation()
+    {
+        // ── 1) ARRANGE ────────────────────────────────────────────────────────────
+        // Slug pre-check passes (concurrent request not yet committed),
+        // but TrySaveChangesAsync returns false when the DB unique constraint fires.
+        var brand = new Brand { Id = 1, Name = "Nike" };
+        var request = new CreateProductDTO { BrandId = 1, Name = "Air Max", Description = "Running shoe" };
+
+        _brandRepositoryMock.Setup(r => r.GetByIdAsync(request.BrandId)).ReturnsAsync(brand);
+        _productRepositoryMock.Setup(r => r.GetProductBySlugAsync("air-max")).ReturnsAsync((Product?)null);
+        _productRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Product>()))
+            .Callback<Product>(p => p.Id = 1)
+            .ReturnsAsync((Product p) => p);
+        _unitOfWorkMock
+            .Setup(u => u.TrySaveChangesAsync())
+            .ReturnsAsync(false); // slug unique-constraint violation detected
+
+        // ── 2) ACT ────────────────────────────────────────────────────────────────
+        var result = await _productService.CreateAsync(request);
+
+        // ── 3) ASSERT ─────────────────────────────────────────────────────────────
+        result.Should().NotBeNull();
+        result.IsFailure.Should().BeTrue();
+        result.StatusCode.Should().Be(400);
+        result.Errors[0].Type.Should().Be(ErrorType.Validation);
+
+        _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.TrySaveChangesAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+        _unitOfWorkMock.Verify(u => u.CommitTransactionAsync(), Times.Never);
     }
 }
