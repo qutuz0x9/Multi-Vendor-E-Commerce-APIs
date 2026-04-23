@@ -11,6 +11,24 @@ public class ProductRepository : BaseRepository<Product, int>, IProductRepositor
     {
     }
 
+    public override async Task<Product?> GetByIdAsync(int id)
+    {
+        return await _dbSet
+            .Include(p => p.Brand)
+            .Include(p => p.ProductCategories)
+                .ThenInclude(pc => pc.Category)
+            .FirstOrDefaultAsync(p => p.Id == id);
+    }
+
+    public override async Task<IEnumerable<Product>> GetAllAsync()
+    {
+        return await _dbSet
+            .Include(p => p.Brand)
+            .Include(p => p.ProductCategories)
+                .ThenInclude(pc => pc.Category)
+            .ToListAsync();
+    }
+
     public override async Task DeleteAsync(Product entity)
     {
         entity.IsDeleted = true;
@@ -21,12 +39,20 @@ public class ProductRepository : BaseRepository<Product, int>, IProductRepositor
 
     public async Task<IEnumerable<Product>> GetProductsByBrandAsync(int brandId)
     {
-        return await _dbSet.Where(p => p.BrandId == brandId).ToListAsync();
+        return await _dbSet
+            .Include(p => p.Brand)
+            .Include(p => p.ProductCategories)
+                .ThenInclude(pc => pc.Category)
+            .Where(p => p.BrandId == brandId)
+            .ToListAsync();
     }
 
     public async Task<IEnumerable<Product>> GetProductsByCategoryAsync(int categoryId)
     {
         return await _dbSet
+            .Include(p => p.Brand)
+            .Include(p => p.ProductCategories)
+                .ThenInclude(pc => pc.Category)
             .Where(p => p.ProductCategories.Any(pc => pc.CategoryId == categoryId))
             .ToListAsync();
     }
