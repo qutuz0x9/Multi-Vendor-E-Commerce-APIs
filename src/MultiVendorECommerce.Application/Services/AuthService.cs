@@ -52,12 +52,12 @@ public class AuthService(
                 return Result<AuthResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
             }
 
-            // 3) Create Customer Profile
-            await CreateCustomerProfile(user, request);
+            // 3) Create Customer Profile + Cart Session
+            var cartSessionId = await CreateCustomerProfile(user, request);
 
             // 4) Generate Token For This User
             var roles = await _userManager.GetRolesAsync(user);
-            var token = _tokenService.GenerateAccessToken(user, roles);
+            var token = _tokenService.GenerateAccessToken(user, roles, cartSessionId);
 
             //5) Generate Refresh Token and Set It In HttpOnly Cookie
             var refreshToken = _tokenService.GenerateRefreshToken();
@@ -189,7 +189,7 @@ public class AuthService(
         return Result<User>.Success(user);
     }
 
-    private async Task CreateCustomerProfile(User user, RegisterUserDTO request)
+    private async Task<Guid> CreateCustomerProfile(User user, RegisterUserDTO request)
     {
         var customer = new Customer
         {
@@ -199,6 +199,17 @@ public class AuthService(
             LastName = request.Username
         };
         await _unitOfWork.Customers.AddAsync(customer);
+
+        // Create a Cart Session Linked To Customer 
+        var cartSession = new CartSession
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = customer.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _unitOfWork.CartSessions.AddAsync(cartSession);
+
+        return cartSession.Id;
     }
 
     private async Task CreateVendorProfile(User user, RegisterVendorDTO request)
@@ -226,7 +237,14 @@ public class AuthService(
             return Result<AuthResponseDTO>.Failure(Error.Validation("Invalid email or password."), 400);
         // 4) Generate Token For This User
         var roles = await _userManager.GetRolesAsync(user);
-        var token = _tokenService.GenerateAccessToken(user, roles);
+        var customer = await _unitOfWork.Customers.GetCustomerByUserIdAsync(user.Id);
+        Guid? cartSessionId = null;
+        if (customer is not null)
+        {
+            var cartSession = await _unitOfWork.CartSessions.GetCartByCustomerAsync(customer.Id);
+            cartSessionId = cartSession?.Id;
+        }
+        var token = _tokenService.GenerateAccessToken(user, roles, cartSessionId);
         // 5) Generate Refresh Token and Set It In HttpOnly Cookie
         var refreshToken = _tokenService.GenerateRefreshToken();
         await _unitOfWork.RefreshTokens.AddAsync(new RefreshToken
