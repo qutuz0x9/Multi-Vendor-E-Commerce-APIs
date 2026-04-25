@@ -6,7 +6,7 @@ namespace MultiVendorECommerce.Application.Interfaces.Infrastructure;
 public interface ITokenService
 
 {
-    string GenerateAccessToken(User user, IList<string> roles);
+    string GenerateAccessToken(User user, IList<string> roles, Guid? cartSessionId = null);
     string GenerateRefreshToken();
 
     ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
