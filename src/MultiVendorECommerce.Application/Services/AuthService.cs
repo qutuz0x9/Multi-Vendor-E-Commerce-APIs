@@ -231,7 +231,7 @@ public class AuthService(
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
             return Result<AuthResponseDTO>.Failure(Error.Validation("Invalid email or password."), 400);
-        // 3) Check Password
+        // 2) Check Password
         var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!passwordValid)
             return Result<AuthResponseDTO>.Failure(Error.Validation("Invalid email or password."), 400);
@@ -254,6 +254,7 @@ public class AuthService(
             Token = refreshToken,
             ExpiresAt = DateTime.UtcNow.AddDays(7)
         });
+        _cookieService.SetCookie("refreshToken", refreshToken, 7);
         // 6) Return Response
         var response = new AuthResponseDTO
         {
