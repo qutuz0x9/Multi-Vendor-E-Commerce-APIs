@@ -19,6 +19,8 @@ public class LoginUserTest
     private readonly Mock<UserManager<User>> _userManagerMock;
     private readonly Mock<RoleManager<Role>> _roleManagerMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<ICustomerRepository> _customerRepositoryMock;
+    private readonly Mock<ICartSessionRepository> _cartSessionRepositoryMock;
     private readonly Mock<IRefreshTokenRepository> _refreshTokenRepositoryMock;
     private readonly Mock<ITokenService> _tokenServiceMock;
     private readonly Mock<ICookieService> _cookieServiceMock;
@@ -56,6 +58,10 @@ public class LoginUserTest
         _refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
 
         _unitOfWorkMock.Setup(u => u.RefreshTokens).Returns(_refreshTokenRepositoryMock.Object);
+        _customerRepositoryMock = new Mock<ICustomerRepository>();
+        _cartSessionRepositoryMock = new Mock<ICartSessionRepository>();
+        _unitOfWorkMock.Setup(u => u.Customers).Returns(_customerRepositoryMock.Object);
+        _unitOfWorkMock.Setup(u => u.CartSessions).Returns(_cartSessionRepositoryMock.Object);
         _tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("dummy_refresh_token");
 
         _authService = new AuthService(
@@ -97,8 +103,18 @@ public class LoginUserTest
             .Setup(u => u.GetRolesAsync(existingUser))
             .ReturnsAsync(new List<string> { Roles.Customer });
 
+        var customer = new Customer { Id = Guid.NewGuid(), UserId = existingUser.Id };
+        var cartSession = new CartSession { Id = Guid.NewGuid(), CustomerId = customer.Id };
+
+        _customerRepositoryMock
+            .Setup(c => c.GetCustomerByUserIdAsync(existingUser.Id))
+            .ReturnsAsync(customer);
+        _cartSessionRepositoryMock
+            .Setup(c => c.GetCartByCustomerAsync(customer.Id))
+            .ReturnsAsync(cartSession);
+
         _tokenServiceMock
-            .Setup(t => t.GenerateAccessToken(existingUser, It.IsAny<IList<string>>()))
+            .Setup(t => t.GenerateAccessToken(existingUser, It.IsAny<IList<string>>(), It.IsAny<Guid?>()))
             .Returns("dummy_token");
 
         // ── 2) ACT ────────────────────────────────────────────────────────────────
@@ -118,9 +134,12 @@ public class LoginUserTest
         _userManagerMock.Verify(u => u.FindByEmailAsync(request.Email), Times.Once);
         _userManagerMock.Verify(u => u.CheckPasswordAsync(existingUser, request.Password), Times.Once);
         _userManagerMock.Verify(u => u.GetRolesAsync(existingUser), Times.Once);
-        _tokenServiceMock.Verify(t => t.GenerateAccessToken(existingUser, It.IsAny<IList<string>>()), Times.Once);
+        _customerRepositoryMock.Verify(c => c.GetCustomerByUserIdAsync(existingUser.Id), Times.Once);
+        _cartSessionRepositoryMock.Verify(c => c.GetCartByCustomerAsync(customer.Id), Times.Once);
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(existingUser, It.IsAny<IList<string>>(), It.Is<Guid?>(id => id.HasValue && id.Value == cartSession.Id)), Times.Once);
         _tokenServiceMock.Verify(t => t.GenerateRefreshToken(), Times.Once);
         _refreshTokenRepositoryMock.Verify(r => r.AddAsync(It.IsAny<RefreshToken>()), Times.Once);
+        _cookieServiceMock.Verify(c => c.SetCookie("refreshToken", It.IsAny<string>(), 7), Times.Once);
     }
 
     [Fact]
@@ -151,7 +170,7 @@ public class LoginUserTest
 
         _userManagerMock.Verify(u => u.FindByEmailAsync(request.Email), Times.Once);
         _userManagerMock.Verify(u => u.CheckPasswordAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
-        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()), Times.Never);
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>(), It.IsAny<Guid?>()), Times.Never);
     }
 
     [Fact]
@@ -193,7 +212,7 @@ public class LoginUserTest
 
         _userManagerMock.Verify(u => u.FindByEmailAsync(request.Email), Times.Once);
         _userManagerMock.Verify(u => u.CheckPasswordAsync(existingUser, request.Password), Times.Once);
-        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()), Times.Never);
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>(), It.IsAny<Guid?>()), Times.Never);
         _tokenServiceMock.Verify(t => t.GenerateRefreshToken(), Times.Never);
     }
 }
