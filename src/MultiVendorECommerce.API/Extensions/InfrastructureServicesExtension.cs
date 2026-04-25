@@ -42,6 +42,7 @@ public static class InfrastructureServicesExtension
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<ICookieService, CookieService>();
         services.AddScoped<IVendorOfferService, VendorOfferService>();
+        services.AddScoped<ICartItemService, CartItemService>();
 
         return services;
     }
