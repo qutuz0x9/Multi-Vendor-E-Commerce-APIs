@@ -14,6 +14,14 @@ public class VendorOfferService(IUnitOfWork unitOfWork, IMapper mapper) : IVendo
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IMapper _mapper = mapper;
+
+    public async Task<Result<IEnumerable<VendorOfferDTO>>> GetAllAsync()
+    {
+        var offers = await _unitOfWork.VendorOffers.GetAllAsync();
+        var offerDtos = _mapper.Map<IEnumerable<VendorOfferDTO>>(offers);
+        return Result<IEnumerable<VendorOfferDTO>>.Success(offerDtos);
+    }
+
     public async Task<Result<VendorOfferDTO>> GetByIdAsync(int id)
     {
         var offer = await _unitOfWork.VendorOffers.GetByIdAsync(id);

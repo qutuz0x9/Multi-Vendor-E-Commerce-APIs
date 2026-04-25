@@ -5,6 +5,7 @@ namespace MultiVendorECommerce.Application.Interfaces.Services;
 
 public interface IVendorOfferService
 {
+    Task<Result<IEnumerable<VendorOfferDTO>>> GetAllAsync();
     Task<Result<VendorOfferDTO>> GetByIdAsync(int id);
     Task<Result<IEnumerable<VendorOfferDTO>>> GetOffersByVendorAsync(Guid vendorId);
     Task<Result<IEnumerable<VendorOfferDTO>>> GetOffersByProductAsync(int productId);

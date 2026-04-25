@@ -15,6 +15,15 @@ public class OfferController(IVendorOfferService vendorOfferService) : Controlle
 {
     protected readonly IVendorOfferService _vendorOfferService = vendorOfferService;
 
+    [HttpGet]
+    [ProducesResponseType(typeof(Result<IEnumerable<VendorOfferDTO>>), StatusCodes.Status200OK)]
+    [AllowAnonymous]
+    public async Task<ActionResult<Result<IEnumerable<VendorOfferDTO>>>> GetAll()
+    {
+        var result = await _vendorOfferService.GetAllAsync();
+        return StatusCode(result.StatusCode, result);
+    }
+
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(Result<VendorOfferDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
