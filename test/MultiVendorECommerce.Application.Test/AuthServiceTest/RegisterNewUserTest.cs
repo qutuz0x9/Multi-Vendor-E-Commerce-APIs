@@ -20,6 +20,7 @@ public class RegisterNewUserTest
     private readonly Mock<RoleManager<Role>> _roleManagerMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ICustomerRepository> _customerRepositoryMock;
+    private readonly Mock<ICartSessionRepository> _cartSessionRepositoryMock;
     private readonly Mock<IRefreshTokenRepository> _refreshTokenRepositoryMock;
     private readonly IAuthService _authService;
     private readonly IMapper _mapper;
@@ -60,6 +61,8 @@ public class RegisterNewUserTest
         _unitOfWorkMock.Setup(u => u.CommitTransactionAsync()).ReturnsAsync(true);
         _unitOfWorkMock.Setup(u => u.RollbackTransactionAsync()).ReturnsAsync(true);
         _unitOfWorkMock.Setup(u => u.Customers).Returns(_customerRepositoryMock.Object);
+        _cartSessionRepositoryMock = new Mock<ICartSessionRepository>();
+        _unitOfWorkMock.Setup(u => u.CartSessions).Returns(_cartSessionRepositoryMock.Object);
         _refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
         _unitOfWorkMock.Setup(u => u.RefreshTokens).Returns(_refreshTokenRepositoryMock.Object);
         _tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("dummy_refresh_token");
@@ -120,9 +123,9 @@ public class RegisterNewUserTest
         _userManagerMock
         .Setup(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer))
         .ReturnsAsync(IdentityResult.Success);
-        // Setup the GenerateAccessToken method to return a dummy token when called with any User and list of roles
+        // Setup the GenerateAccessToken method to return a dummy token when called with any User, list of roles, and optional cartSessionId
         _tokenServiceMock
-        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
+        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>(), It.IsAny<Guid?>()))
         .Returns("dummy_token");
         // Setup GetRolesAsync to return the Customer role after assignment
         _userManagerMock
@@ -145,8 +148,8 @@ public class RegisterNewUserTest
         _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
         // Verify that the UserManager's AddToRoleAsync method was called once with any User and the correct role
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
-        // Verify that the TokenService's GenerateAccessToken method was called once with any User and any list of roles
-        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()), Times.Once);
+        // Verify that the TokenService's GenerateAccessToken method was called once with any User, any list of roles, and a non-null cartSessionId
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>(), It.Is<Guid?>(id => id.HasValue)), Times.Once);
 
         // Verify transaction was committed and never rolled back
         _unitOfWorkMock.Verify(u => u.BeginTransactionAsync(), Times.Once);
@@ -156,6 +159,10 @@ public class RegisterNewUserTest
         // Verify customer profile was created
         _customerRepositoryMock.Verify(c => c.AddAsync(It.Is<Customer>(
             cust => cust.UserId != Guid.Empty && cust.FirstName == request.Username
+        )), Times.Once);
+        // Verify cart session was created and linked to the customer
+        _cartSessionRepositoryMock.Verify(c => c.AddAsync(It.Is<CartSession>(
+            cs => cs.CustomerId != Guid.Empty && cs.Id != Guid.Empty
         )), Times.Once);
 
         result.IsSuccess.Should().BeTrue();
@@ -473,7 +480,7 @@ public class RegisterNewUserTest
         .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Role assignment failed." }));
 
         _tokenServiceMock
-        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
+        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>(), It.IsAny<Guid?>()))
         .Returns("dummy_token");
 
         // ── 2) ACT ────────────────────────────────────────────────────────────
@@ -483,7 +490,7 @@ public class RegisterNewUserTest
         _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
         _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
-        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()), Times.Never);
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>(), It.IsAny<Guid?>()), Times.Never);
 
         // Verify transaction was rolled back and never committed
         _unitOfWorkMock.Verify(u => u.RollbackTransactionAsync(), Times.Once);
@@ -521,7 +528,7 @@ public class RegisterNewUserTest
         .Setup(u => u.GetRolesAsync(It.IsAny<User>()))
         .ReturnsAsync(new List<string> { Roles.Customer });
         _tokenServiceMock
-        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
+        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>(), It.IsAny<Guid?>()))
         .Returns("dummy_token");
 
         // ── 2) ACT ────────────────────────────────────────────────────────────
@@ -531,7 +538,7 @@ public class RegisterNewUserTest
         _userManagerMock.Verify(u => u.CreateAsync(It.IsAny<User>(), request.Password), Times.Once);
         _roleManagerMock.Verify(r => r.RoleExistsAsync(Roles.Customer), Times.Once);
         _userManagerMock.Verify(r => r.AddToRoleAsync(It.IsAny<User>(), Roles.Customer), Times.Once);
-        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.Is<IList<string>>(roles => roles.Contains(Roles.Customer))), Times.Once);
+        _tokenServiceMock.Verify(t => t.GenerateAccessToken(It.IsAny<User>(), It.Is<IList<string>>(roles => roles.Contains(Roles.Customer)), It.Is<Guid?>(id => id.HasValue)), Times.Once);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -567,7 +574,7 @@ public class RegisterNewUserTest
         .Setup(u => u.GetRolesAsync(It.IsAny<User>()))
         .ReturnsAsync(new List<string> { Roles.Customer });
         _tokenServiceMock
-        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
+        .Setup(t => t.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>(), It.IsAny<Guid?>()))
         .Returns("dummy_token");
 
         // ── 2) ACT ────────────────────────────────────────────────────────────
@@ -578,6 +585,10 @@ public class RegisterNewUserTest
             cust => cust.UserId != Guid.Empty
                 && cust.FirstName == request.Username
                 && cust.LastName == request.Username
+        )), Times.Once);
+        // Verify cart session was created
+        _cartSessionRepositoryMock.Verify(c => c.AddAsync(It.Is<CartSession>(
+            cs => cs.CustomerId != Guid.Empty && cs.Id != Guid.Empty
         )), Times.Once);
 
         result.IsSuccess.Should().BeTrue();
