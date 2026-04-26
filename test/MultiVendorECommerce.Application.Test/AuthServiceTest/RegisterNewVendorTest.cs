@@ -12,6 +12,8 @@ using MultiVendorECommerce.Application.Interfaces.Infrastructure;
 using MultiVendorECommerce.Application.Interfaces.Repositories;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
+
 namespace MultiVendorECommerce.Application.Test.AuthServiceTest;
 
 public class RegisterNewVendorTest
@@ -62,6 +64,7 @@ public class RegisterNewVendorTest
         _refreshTokenRepositoryMock = new Mock<IRefreshTokenRepository>();
         _unitOfWorkMock.Setup(u => u.RefreshTokens).Returns(_refreshTokenRepositoryMock.Object);
         _tokenServiceMock.Setup(t => t.GenerateRefreshToken()).Returns("dummy_refresh_token");
+        var loggerMock = new Mock<IAppLogger<AuthService>>();
 
         _authService = new AuthService(
             _userManagerMock.Object,
@@ -69,7 +72,8 @@ public class RegisterNewVendorTest
             _unitOfWorkMock.Object,
             _mapper,
             _tokenServiceMock.Object,
-            _cookieServiceMock.Object
+            _cookieServiceMock.Object,
+            loggerMock.Object
         );
     }
 

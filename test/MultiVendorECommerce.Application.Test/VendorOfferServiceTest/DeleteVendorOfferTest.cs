@@ -10,6 +10,7 @@ using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.VendorOfferServiceTest;
 
 public class DeleteVendorOfferTest
@@ -17,6 +18,7 @@ public class DeleteVendorOfferTest
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IVendorOfferRepository> _vendorOfferRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<VendorOfferService>> _loggerMock;
     private readonly IVendorOfferService _vendorOfferService;
 
     public DeleteVendorOfferTest()
@@ -24,10 +26,11 @@ public class DeleteVendorOfferTest
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _vendorOfferRepositoryMock = new Mock<IVendorOfferRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<VendorOfferService>>();
 
         _unitOfWorkMock.Setup(u => u.VendorOffers).Returns(_vendorOfferRepositoryMock.Object);
 
-        _vendorOfferService = new VendorOfferService(_unitOfWorkMock.Object, _mapper);
+        _vendorOfferService = new VendorOfferService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

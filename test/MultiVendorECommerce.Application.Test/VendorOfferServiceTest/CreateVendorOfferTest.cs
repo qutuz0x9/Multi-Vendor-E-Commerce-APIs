@@ -11,6 +11,7 @@ using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.VendorOfferServiceTest;
 
 public class CreateVendorOfferTest
@@ -21,6 +22,7 @@ public class CreateVendorOfferTest
     private readonly Mock<IProductRepository> _productRepositoryMock;
     private readonly Mock<IInventoryRepository> _inventoryRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<VendorOfferService>> _loggerMock;
     private readonly IVendorOfferService _vendorOfferService;
 
     public CreateVendorOfferTest()
@@ -31,13 +33,14 @@ public class CreateVendorOfferTest
         _productRepositoryMock = new Mock<IProductRepository>();
         _inventoryRepositoryMock = new Mock<IInventoryRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<VendorOfferService>>();
 
         _unitOfWorkMock.Setup(u => u.VendorOffers).Returns(_vendorOfferRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Vendors).Returns(_vendorRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Products).Returns(_productRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Inventories).Returns(_inventoryRepositoryMock.Object);
 
-        _vendorOfferService = new VendorOfferService(_unitOfWorkMock.Object, _mapper);
+        _vendorOfferService = new VendorOfferService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

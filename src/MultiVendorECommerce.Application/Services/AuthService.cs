@@ -6,6 +6,7 @@ using MultiVendorECommerce.Application.Interfaces.Services;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Constants;
 using MultiVendorECommerce.Shared.Helpers;
+using MultiVendorECommerce.Shared.Logging;
 using MultiVendorECommerce.Shared.Results;
 using MultiVendorECommerce.Shared.Utils;
 
@@ -17,7 +18,8 @@ public class AuthService(
     IUnitOfWork unitOfWork,
     IMapper mapper,
     ITokenService tokenService,
-    ICookieService cookieService
+    ICookieService cookieService,
+    IAppLogger<AuthService> logger
     )
  : IAuthService
 {
@@ -27,10 +29,12 @@ public class AuthService(
     private readonly ITokenService _tokenService = tokenService;
     private readonly ICookieService _cookieService = cookieService;
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IAppLogger<AuthService> _logger = logger;
 
 
     public async Task<Result<AuthResponseDTO>> RegisterUser(RegisterUserDTO request)
     {
+        _logger.LogInformation("Registering customer with username {Username}", request.Username);
         await _unitOfWork.BeginTransactionAsync();
         try
         {
@@ -39,6 +43,7 @@ public class AuthService(
             if (registerResult.IsFailure)
             {
                 await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogWarning("Customer registration failed for username {Username}", request.Username);
                 return Result<AuthResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
             }
 
@@ -49,6 +54,7 @@ public class AuthService(
             if (roleResult.IsFailure)
             {
                 await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogWarning("Customer registration failed: could not assign role for user {UserId}", user.Id);
                 return Result<AuthResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
             }
 
@@ -73,6 +79,7 @@ public class AuthService(
             // 6) Commit Transaction
             await _unitOfWork.CommitTransactionAsync();
 
+            _logger.LogInformation("Customer {UserId} registered successfully", user.Id);
             var response = new AuthResponseDTO
             {
                 UserId = user.Id,
@@ -91,6 +98,7 @@ public class AuthService(
 
     public async Task<Result<AuthResponseDTO>> RegisterVendor(RegisterVendorDTO request)
     {
+        _logger.LogInformation("Registering vendor with username {Username}", request.Username);
         await _unitOfWork.BeginTransactionAsync();
         try
         {
@@ -99,6 +107,7 @@ public class AuthService(
             if (registerResult.IsFailure)
             {
                 await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogWarning("Vendor registration failed for username {Username}", request.Username);
                 return Result<AuthResponseDTO>.Failure(registerResult.Errors, registerResult.StatusCode);
             }
 
@@ -109,6 +118,7 @@ public class AuthService(
             if (roleResult.IsFailure)
             {
                 await _unitOfWork.RollbackTransactionAsync();
+                _logger.LogWarning("Vendor registration failed: could not assign role for user {UserId}", user.Id);
                 return Result<AuthResponseDTO>.Failure(roleResult.Errors, roleResult.StatusCode);
             }
 
@@ -133,6 +143,7 @@ public class AuthService(
             // 6) Commit Transaction
             await _unitOfWork.CommitTransactionAsync();
 
+            _logger.LogInformation("Vendor {UserId} registered successfully", user.Id);
             var response = new AuthResponseDTO
             {
                 UserId = user.Id,
@@ -168,12 +179,18 @@ public class AuthService(
         // 1) Check for duplicate email
         var existingByEmail = await _userManager.FindByEmailAsync(request.Email);
         if (existingByEmail is not null)
+        {
+            _logger.LogWarning("Registration failed: email {Email} is already in use", request.Email);
             return Result<User>.Failure(Error.Validation("Email is already in use."), 400);
+        }
 
         // 2) Check for duplicate username
         var existingByName = await _userManager.FindByNameAsync(request.Username);
         if (existingByName is not null)
+        {
+            _logger.LogWarning("Registration failed: username {Username} is already taken", request.Username);
             return Result<User>.Failure(Error.Validation("Username is already taken."), 400);
+        }
 
         // 3) Map Request To User
         var user = _mapper.Map<User>(request);
@@ -183,6 +200,7 @@ public class AuthService(
         var result = await _userManager.CreateAsync(user, request.Password);
         if (!result.Succeeded)
         {
+            _logger.LogWarning("Registration failed: identity errors for username {Username}", request.Username);
             var errors = result.Errors.Select(e => Error.Failure(e.Description));
             return Result<User>.Failure(errors, 500);
         }
@@ -227,14 +245,21 @@ public class AuthService(
 
     public async Task<Result<AuthResponseDTO>> Login(LoginRequestDTO request)
     {
+        _logger.LogInformation("Login attempt for email {Email}", request.Email);
         // 1) Find User By Email
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user is null)
+        {
+            _logger.LogWarning("Login failed: user not found for email {Email}", request.Email);
             return Result<AuthResponseDTO>.Failure(Error.Validation("Invalid email or password."), 400);
+        }
         // 2) Check Password
         var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!passwordValid)
+        {
+            _logger.LogWarning("Login failed: invalid password for user {UserId}", user.Id);
             return Result<AuthResponseDTO>.Failure(Error.Validation("Invalid email or password."), 400);
+        }
         // 4) Generate Token For This User
         var roles = await _userManager.GetRolesAsync(user);
         var customer = await _unitOfWork.Customers.GetCustomerByUserIdAsync(user.Id);
@@ -256,6 +281,7 @@ public class AuthService(
         });
         _cookieService.SetCookie("refreshToken", refreshToken, 7);
         // 6) Return Response
+        _logger.LogInformation("User {UserId} logged in successfully", user.Id);
         var response = new AuthResponseDTO
         {
             UserId = user.Id,

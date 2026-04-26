@@ -11,6 +11,7 @@ using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
+using MultiVendorECommerce.Shared.Logging;
 
 namespace MultiVendorECommerce.Application.Test.OrderServiceTest;
 
@@ -71,7 +72,7 @@ public class CreateOrderTest
         _unitOfWorkMock.Setup(u => u.OrderItems).Returns(_orderItemRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.OrderShippingAddresses).Returns(_orderShippingAddressRepositoryMock.Object);
 
-        _orderService = new OrderService(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object);
+        _orderService = new OrderService(_unitOfWorkMock.Object, _mapper, _userManagerMock.Object, new Mock<IAppLogger<OrderService>>().Object);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

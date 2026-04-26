@@ -10,6 +10,7 @@ using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.ProductCategoryServiceTest;
 
 public class AddProductToCategoryTest
@@ -19,6 +20,7 @@ public class AddProductToCategoryTest
     private readonly Mock<ICategoryRepository> _categoryRepositoryMock;
     private readonly Mock<IProductCategoryRepository> _productCategoryRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<ProductCategoryService>> _loggerMock;
     private readonly IProductCategoryService _productCategoryService;
 
     public AddProductToCategoryTest()
@@ -28,12 +30,13 @@ public class AddProductToCategoryTest
         _categoryRepositoryMock = new Mock<ICategoryRepository>();
         _productCategoryRepositoryMock = new Mock<IProductCategoryRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<ProductCategoryService>>();
 
         _unitOfWorkMock.Setup(u => u.Products).Returns(_productRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Categories).Returns(_categoryRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.ProductCategories).Returns(_productCategoryRepositoryMock.Object);
 
-        _productCategoryService = new ProductCategoryService(_unitOfWorkMock.Object, _mapper);
+        _productCategoryService = new ProductCategoryService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

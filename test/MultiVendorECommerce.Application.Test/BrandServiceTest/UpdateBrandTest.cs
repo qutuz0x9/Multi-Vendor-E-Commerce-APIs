@@ -11,6 +11,7 @@ using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.BrandServiceTest;
 
 public class UpdateBrandTest
@@ -18,6 +19,7 @@ public class UpdateBrandTest
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IBrandRepository> _brandRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<BrandService>> _loggerMock;
     private readonly IBrandService _brandService;
 
     public UpdateBrandTest()
@@ -25,10 +27,11 @@ public class UpdateBrandTest
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _brandRepositoryMock = new Mock<IBrandRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<BrandService>>();
 
         _unitOfWorkMock.Setup(u => u.Brands).Returns(_brandRepositoryMock.Object);
 
-        _brandService = new BrandService(_unitOfWorkMock.Object, _mapper);
+        _brandService = new BrandService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

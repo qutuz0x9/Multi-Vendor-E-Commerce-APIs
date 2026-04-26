@@ -9,6 +9,7 @@ using MultiVendorECommerce.Application.Services;
 using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
+using MultiVendorECommerce.Shared.Logging;
 
 namespace MultiVendorECommerce.Application.Test.OrderServiceTest;
 
@@ -18,6 +19,8 @@ public class GetAllOrdersTest
     private readonly Mock<IOrderRepository> _orderRepositoryMock;
     private readonly IMapper _mapper;
     private readonly IOrderService _orderService;
+
+    private readonly Mock<IAppLogger<OrderService>> _loggerMock;
 
     public GetAllOrdersTest()
     {
@@ -29,10 +32,11 @@ public class GetAllOrdersTest
             userStoreMock, null!, null!, null!, null!, null!, null!, null!, null!);
 
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<OrderService>>();
 
         _unitOfWorkMock.Setup(u => u.Orders).Returns(_orderRepositoryMock.Object);
 
-        _orderService = new OrderService(_unitOfWorkMock.Object, _mapper, userManagerMock.Object);
+        _orderService = new OrderService(_unitOfWorkMock.Object, _mapper, userManagerMock.Object, _loggerMock.Object);
     }
 
     [Fact]

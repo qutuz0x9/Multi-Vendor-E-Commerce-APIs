@@ -9,6 +9,7 @@ using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.CartSessionServiceTest;
 
 public class GetMyCartTest
@@ -17,6 +18,7 @@ public class GetMyCartTest
     private readonly Mock<ICustomerRepository> _customerRepositoryMock;
     private readonly Mock<ICartSessionRepository> _cartSessionRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<CartSessionService>> _loggerMock;
     private readonly ICartSessionService _cartSessionService;
 
     public GetMyCartTest()
@@ -25,11 +27,12 @@ public class GetMyCartTest
         _customerRepositoryMock = new Mock<ICustomerRepository>();
         _cartSessionRepositoryMock = new Mock<ICartSessionRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<CartSessionService>>();
 
         _unitOfWorkMock.Setup(u => u.Customers).Returns(_customerRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.CartSessions).Returns(_cartSessionRepositoryMock.Object);
 
-        _cartSessionService = new CartSessionService(_unitOfWorkMock.Object, _mapper);
+        _cartSessionService = new CartSessionService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

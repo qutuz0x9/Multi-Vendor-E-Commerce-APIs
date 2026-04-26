@@ -12,6 +12,7 @@ using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.ProductServiceTest;
 
 public class CreateProductTest
@@ -22,6 +23,7 @@ public class CreateProductTest
     private readonly Mock<ICategoryRepository> _categoryRepositoryMock;
     private readonly Mock<IProductCategoryRepository> _productCategoryRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<ProductService>> _loggerMock;
     private readonly IProductService _productService;
 
     public CreateProductTest()
@@ -32,6 +34,7 @@ public class CreateProductTest
         _categoryRepositoryMock = new Mock<ICategoryRepository>();
         _productCategoryRepositoryMock = new Mock<IProductCategoryRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<ProductService>>();
 
         _unitOfWorkMock.Setup(u => u.Products).Returns(_productRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Brands).Returns(_brandRepositoryMock.Object);
@@ -49,7 +52,7 @@ public class CreateProductTest
         _unitOfWorkMock.Setup(u => u.CommitTransactionAsync()).ReturnsAsync(true);
         _unitOfWorkMock.Setup(u => u.RollbackTransactionAsync()).ReturnsAsync(true);
 
-        _productService = new ProductService(_unitOfWorkMock.Object, _mapper);
+        _productService = new ProductService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

@@ -9,6 +9,7 @@ using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.ProductCategoryServiceTest;
 
 public class RemoveProductFromCategoryTest
@@ -16,6 +17,7 @@ public class RemoveProductFromCategoryTest
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<IProductCategoryRepository> _productCategoryRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<ProductCategoryService>> _loggerMock;
     private readonly IProductCategoryService _productCategoryService;
 
     public RemoveProductFromCategoryTest()
@@ -23,10 +25,11 @@ public class RemoveProductFromCategoryTest
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _productCategoryRepositoryMock = new Mock<IProductCategoryRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<ProductCategoryService>>();
 
         _unitOfWorkMock.Setup(u => u.ProductCategories).Returns(_productCategoryRepositoryMock.Object);
 
-        _productCategoryService = new ProductCategoryService(_unitOfWorkMock.Object, _mapper);
+        _productCategoryService = new ProductCategoryService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

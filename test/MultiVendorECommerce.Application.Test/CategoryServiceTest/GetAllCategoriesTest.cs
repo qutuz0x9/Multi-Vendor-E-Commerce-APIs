@@ -9,6 +9,7 @@ using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.CategoryServiceTest;
 
 public class GetAllCategoriesTest
@@ -16,6 +17,7 @@ public class GetAllCategoriesTest
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ICategoryRepository> _categoryRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<CategoryService>> _loggerMock;
     private readonly ICategoryService _categoryService;
 
     public GetAllCategoriesTest()
@@ -23,10 +25,11 @@ public class GetAllCategoriesTest
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _categoryRepositoryMock = new Mock<ICategoryRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<CategoryService>>();
 
         _unitOfWorkMock.Setup(u => u.Categories).Returns(_categoryRepositoryMock.Object);
 
-        _categoryService = new CategoryService(_unitOfWorkMock.Object, _mapper);
+        _categoryService = new CategoryService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

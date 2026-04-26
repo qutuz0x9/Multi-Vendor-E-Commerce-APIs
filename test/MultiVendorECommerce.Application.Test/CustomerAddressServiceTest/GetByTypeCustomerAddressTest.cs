@@ -11,6 +11,7 @@ using MultiVendorECommerce.Domain.Enums;
 using MultiVendorECommerce.Domain.Models;
 using System.Linq.Expressions;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.CustomerAddressServiceTest;
 
 public class GetByTypeCustomerAddressTest
@@ -18,6 +19,7 @@ public class GetByTypeCustomerAddressTest
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
     private readonly Mock<ICustomerAddressRepository> _customerAddressRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<CustomerAddressService>> _loggerMock;
     private readonly ICustomerAddressService _customerAddressService;
 
     public GetByTypeCustomerAddressTest()
@@ -25,10 +27,11 @@ public class GetByTypeCustomerAddressTest
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _customerAddressRepositoryMock = new Mock<ICustomerAddressRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<CustomerAddressService>>();
 
         _unitOfWorkMock.Setup(u => u.CustomerAddresses).Returns(_customerAddressRepositoryMock.Object);
 
-        _customerAddressService = new CustomerAddressService(_unitOfWorkMock.Object, _mapper);
+        _customerAddressService = new CustomerAddressService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]

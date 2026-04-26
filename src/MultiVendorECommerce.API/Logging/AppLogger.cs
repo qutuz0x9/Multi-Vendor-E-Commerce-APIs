@@ -1,8 +1,9 @@
 ﻿using Serilog;
 using Serilog.Context;
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.API.Logging;
 
-public class AppLogger<T> : IAppLogger<T>
+public class AppLogger<T> : IAppLogger<T>, MultiVendorECommerce.Shared.Logging.IAppLogger<T>
 {
     private readonly Serilog.ILogger _logger;
 

@@ -10,6 +10,7 @@ using MultiVendorECommerce.Application.Test.Helpers;
 using MultiVendorECommerce.Domain.Models;
 using MultiVendorECommerce.Shared.Enums;
 
+using MultiVendorECommerce.Shared.Logging;
 namespace MultiVendorECommerce.Application.Test.CartItemServiceTest;
 
 public class UpdateCartItemTest
@@ -20,6 +21,7 @@ public class UpdateCartItemTest
     private readonly Mock<ICartItemRepository> _cartItemRepositoryMock;
     private readonly Mock<IInventoryRepository> _inventoryRepositoryMock;
     private readonly IMapper _mapper;
+    private readonly Mock<IAppLogger<CartItemService>> _loggerMock;
     private readonly ICartItemService _cartItemService;
 
     public UpdateCartItemTest()
@@ -30,13 +32,14 @@ public class UpdateCartItemTest
         _cartItemRepositoryMock = new Mock<ICartItemRepository>();
         _inventoryRepositoryMock = new Mock<IInventoryRepository>();
         _mapper = MapperTestHelper.GetMapper();
+        _loggerMock = new Mock<IAppLogger<CartItemService>>();
 
         _unitOfWorkMock.Setup(u => u.Customers).Returns(_customerRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.CartSessions).Returns(_cartSessionRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.CartItems).Returns(_cartItemRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Inventories).Returns(_inventoryRepositoryMock.Object);
 
-        _cartItemService = new CartItemService(_unitOfWorkMock.Object, _mapper);
+        _cartItemService = new CartItemService(_unitOfWorkMock.Object, _mapper, _loggerMock.Object);
     }
 
     [Fact]
