@@ -16,6 +16,88 @@ public class OrderService(IUnitOfWork unitOfWork, IMapper mapper, UserManager<Us
     private readonly IMapper _mapper = mapper;
     private readonly UserManager<User> _userManager = userManager;
 
+    public async Task<Result<IEnumerable<OrderDTO>>> GetAllOrdersAsync()
+    {
+        var orders = await _unitOfWork.Orders.GetAllAsync();
+        return Result<IEnumerable<OrderDTO>>.Success(_mapper.Map<IEnumerable<OrderDTO>>(orders));
+    }
+
+    public async Task<Result<OrderDTO>> GetOrderByIdAsync(int orderId)
+    {
+        var order = await _unitOfWork.Orders.GetOrderWithItemsAsync(orderId);
+        if (order is null)
+            return Result<OrderDTO>.Failure(Error.NotFound("Order not found."), 404);
+
+        var orderDto = _mapper.Map<OrderDTO>(order);
+        orderDto.OrderItems = _mapper.Map<IEnumerable<OrderItemDTO>>(order.OrderItems);
+        orderDto.ShippingAddress = _mapper.Map<OrderShippingAddressDTO>(order.ShippingAddress);
+
+        return Result<OrderDTO>.Success(orderDto);
+    }
+
+    public async Task<Result<IEnumerable<OrderDTO>>> GetMyOrdersAsync(Guid userId)
+    {
+        var customer = await _unitOfWork.Customers.GetCustomerByUserIdAsync(userId);
+        if (customer is null)
+            return Result<IEnumerable<OrderDTO>>.Failure(Error.Forbidden("Only customers can view their orders."), 403);
+
+        var orders = await _unitOfWork.Orders.GetOrdersByCustomerAsync(customer.Id);
+        return Result<IEnumerable<OrderDTO>>.Success(_mapper.Map<IEnumerable<OrderDTO>>(orders));
+    }
+
+    public async Task<Result> CancelOrderAsync(int orderId, Guid userId)
+    {
+        var customer = await _unitOfWork.Customers.GetCustomerByUserIdAsync(userId);
+        if (customer is null)
+            return Result.Failure(Error.Forbidden("Only customers can cancel their orders."), 403);
+
+        var order = await _unitOfWork.Orders.GetOrderWithItemsAsync(orderId);
+        if (order is null)
+            return Result.Failure(Error.NotFound("Order not found."), 404);
+
+        if (order.CustomerId != customer.Id)
+            return Result.Failure(Error.Forbidden("You are not allowed to cancel this order."), 403);
+
+        if (order.Status != OrderStatus.Pending && order.Status != OrderStatus.Confirmed)
+            return Result.Failure(Error.Validation($"Cannot cancel an order with status '{order.Status}'."), 400);
+
+        // Release reserved inventory for each order item
+        foreach (var item in order.OrderItems)
+        {
+            var inventory = await _unitOfWork.Inventories.GetInventoryByVendorOfferAsync(item.VendorOfferId);
+            if (inventory is not null)
+            {
+                inventory.ReservedQuantity = Math.Max(0, inventory.ReservedQuantity - item.Quantity);
+                await _unitOfWork.Inventories.UpdateAsync(inventory);
+            }
+        }
+
+        order.Status = OrderStatus.Cancelled;
+        order.ModifiedAt = DateTime.UtcNow;
+        await _unitOfWork.Orders.UpdateAsync(order);
+        await _unitOfWork.SaveChangesAsync();
+
+        return Result.Success(200);
+    }
+
+    public async Task<Result<OrderDTO>> UpdateOrderStatusAsync(int orderId, UpdateOrderStatusDTO request)
+    {
+        var order = await _unitOfWork.Orders.GetOrderWithItemsAsync(orderId);
+        if (order is null)
+            return Result<OrderDTO>.Failure(Error.NotFound("Order not found."), 404);
+
+        order.Status = request.Status;
+        order.ModifiedAt = DateTime.UtcNow;
+        await _unitOfWork.Orders.UpdateAsync(order);
+        await _unitOfWork.SaveChangesAsync();
+
+        var orderDto = _mapper.Map<OrderDTO>(order);
+        orderDto.OrderItems = _mapper.Map<IEnumerable<OrderItemDTO>>(order.OrderItems);
+        orderDto.ShippingAddress = _mapper.Map<OrderShippingAddressDTO>(order.ShippingAddress);
+
+        return Result<OrderDTO>.Success(orderDto);
+    }
+
     public async Task<Result<OrderDTO>> CreateOrderAsync(Guid userId)
     {
         // Phase 1: Validation (before transaction)
