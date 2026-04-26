@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MultiVendorECommerce.API.Extensions;
+using MultiVendorECommerce.API.Logging;
 using MultiVendorECommerce.Application.DTOs.CartItem;
 using MultiVendorECommerce.Application.Interfaces.Services;
 using MultiVendorECommerce.Shared.Constants;
@@ -10,9 +11,10 @@ namespace MultiVendorECommerce.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CartItemController(ICartItemService cartItemService) : ControllerBase
+public class CartItemController(ICartItemService cartItemService, IAppLogger<CartItemController> logger) : ControllerBase
 {
     protected readonly ICartItemService _cartItemService = cartItemService;
+    protected readonly IAppLogger<CartItemController> _logger = logger;
 
     [HttpGet]
     [Authorize(Roles = Roles.Admin)]
@@ -21,6 +23,7 @@ public class CartItemController(ICartItemService cartItemService) : ControllerBa
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Result<IEnumerable<CartItemDTO>>>> GetAll()
     {
+        _logger.LogInformation("GetAll cart items called");
         var result = await _cartItemService.GetAllAsync();
         return StatusCode(result.StatusCode, result);
     }
@@ -33,6 +36,7 @@ public class CartItemController(ICartItemService cartItemService) : ControllerBa
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Result<CartItemDTO>>> GetById(int id)
     {
+        _logger.LogInformation("GetById cart item called with id {Id}", id);
         var result = await _cartItemService.GetByIdAsync(id);
         return StatusCode(result.StatusCode, result);
     }
@@ -46,6 +50,7 @@ public class CartItemController(ICartItemService cartItemService) : ControllerBa
     public async Task<ActionResult<Result<IEnumerable<CartItemDTO>>>> GetMyCartItems()
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("GetMyCartItems called for user {UserId}", userId);
         var result = await _cartItemService.GetMyCartItemsAsync(userId);
         return StatusCode(result.StatusCode, result);
     }
@@ -60,6 +65,7 @@ public class CartItemController(ICartItemService cartItemService) : ControllerBa
     public async Task<ActionResult<Result<CartItemDTO>>> AddItem([FromBody] AddCartItemDTO request)
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("AddItem called for user {UserId}", userId);
         var result = await _cartItemService.AddItemAsync(userId, request);
         return StatusCode(result.StatusCode, result);
     }
@@ -74,6 +80,7 @@ public class CartItemController(ICartItemService cartItemService) : ControllerBa
     public async Task<ActionResult<Result<CartItemDTO>>> UpdateItem(int id, [FromBody] UpdateCartItemDTO request)
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("UpdateItem called for cart item {Id} by user {UserId}", id, userId);
         var result = await _cartItemService.UpdateAsync(id, userId, request);
         return StatusCode(result.StatusCode, result);
     }
@@ -87,6 +94,7 @@ public class CartItemController(ICartItemService cartItemService) : ControllerBa
     public async Task<ActionResult<Result>> RemoveItem(int id)
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("RemoveItem called for cart item {Id} by user {UserId}", id, userId);
         var result = await _cartItemService.RemoveItemAsync(id, userId);
         return StatusCode(result.StatusCode, result);
     }

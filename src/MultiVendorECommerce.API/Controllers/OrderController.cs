@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MultiVendorECommerce.API.Extensions;
+using MultiVendorECommerce.API.Logging;
 using MultiVendorECommerce.Application.DTOs.Order;
 using MultiVendorECommerce.Application.Interfaces.Services;
 using MultiVendorECommerce.Shared.Constants;
@@ -10,9 +11,10 @@ namespace MultiVendorECommerce.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class OrderController(IOrderService orderService) : ControllerBase
+public class OrderController(IOrderService orderService, IAppLogger<OrderController> logger) : ControllerBase
 {
     protected readonly IOrderService _orderService = orderService;
+    protected readonly IAppLogger<OrderController> _logger = logger;
 
     [HttpGet]
     [Authorize(Roles = Roles.Admin)]
@@ -21,6 +23,7 @@ public class OrderController(IOrderService orderService) : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Result<IEnumerable<OrderDTO>>>> GetAllOrders()
     {
+        _logger.LogInformation("GetAllOrders called");
         var result = await _orderService.GetAllOrdersAsync();
         return StatusCode(result.StatusCode, result);
     }
@@ -33,6 +36,7 @@ public class OrderController(IOrderService orderService) : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Result<OrderDTO>>> GetOrderById(int id)
     {
+        _logger.LogInformation("GetOrderById called with id {Id}", id);
         var result = await _orderService.GetOrderByIdAsync(id);
         return StatusCode(result.StatusCode, result);
     }
@@ -45,6 +49,7 @@ public class OrderController(IOrderService orderService) : ControllerBase
     public async Task<ActionResult<Result<IEnumerable<OrderDTO>>>> GetMyOrders()
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("GetMyOrders called for user {UserId}", userId);
         var result = await _orderService.GetMyOrdersAsync(userId);
         return StatusCode(result.StatusCode, result);
     }
@@ -59,6 +64,7 @@ public class OrderController(IOrderService orderService) : ControllerBase
     public async Task<ActionResult<Result<OrderDTO>>> CreateOrder()
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("CreateOrder called for user {UserId}", userId);
         var result = await _orderService.CreateOrderAsync(userId);
         return StatusCode(result.StatusCode, result);
     }
@@ -73,6 +79,7 @@ public class OrderController(IOrderService orderService) : ControllerBase
     public async Task<ActionResult<Result>> CancelOrder(int id)
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("CancelOrder called for order {Id} by user {UserId}", id, userId);
         var result = await _orderService.CancelOrderAsync(id, userId);
         return StatusCode(result.StatusCode, result);
     }
@@ -86,6 +93,7 @@ public class OrderController(IOrderService orderService) : ControllerBase
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Result<OrderDTO>>> UpdateOrderStatus(int id, [FromBody] UpdateOrderStatusDTO request)
     {
+        _logger.LogInformation("UpdateOrderStatus called for order {Id}", id);
         var result = await _orderService.UpdateOrderStatusAsync(id, request);
         return StatusCode(result.StatusCode, result);
     }

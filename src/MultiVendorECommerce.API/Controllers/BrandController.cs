@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MultiVendorECommerce.API.Logging;
 using MultiVendorECommerce.Application.DTOs.Brand;
 using MultiVendorECommerce.Application.Interfaces.Services;
 using MultiVendorECommerce.Shared.Results;
@@ -8,9 +9,10 @@ namespace MultiVendorECommerce.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class BrandController(IBrandService brandService) : ControllerBase
+public class BrandController(IBrandService brandService, IAppLogger<BrandController> logger) : ControllerBase
 {
     protected readonly IBrandService _brandService = brandService;
+    protected readonly IAppLogger<BrandController> _logger = logger;
 
     [HttpGet]
     [ProducesResponseType(typeof(Result<IEnumerable<BrandDTO>>), StatusCodes.Status200OK)]
@@ -22,6 +24,7 @@ public class BrandController(IBrandService brandService) : ControllerBase
     [Authorize(Roles = "Admin,Vendor")]
     public async Task<ActionResult<Result<IEnumerable<BrandDTO>>>> GetAll()
     {
+        _logger.LogInformation("GetAll brands called");
         var result = await _brandService.GetAllAsync();
         return StatusCode(result.StatusCode, result);
     }
@@ -36,6 +39,7 @@ public class BrandController(IBrandService brandService) : ControllerBase
     [Authorize(Roles = "Admin,Vendor")]
     public async Task<ActionResult<Result<BrandDTO>>> GetById(int id)
     {
+        _logger.LogInformation("GetById brand called with id {Id}", id);
         var result = await _brandService.GetByIdAsync(id);
         return StatusCode(result.StatusCode, result);
     }
@@ -50,6 +54,7 @@ public class BrandController(IBrandService brandService) : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Result<BrandDTO>>> Create([FromBody] CreateBrandDTO request)
     {
+        _logger.LogInformation("Create brand called");
         var result = await _brandService.CreateAsync(request);
         return StatusCode(result.StatusCode, result);
     }
@@ -64,6 +69,7 @@ public class BrandController(IBrandService brandService) : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Result<BrandDTO>>> Update(int id, [FromBody] UpdateBrandDTO request)
     {
+        _logger.LogInformation("Update brand called with id {Id}", id);
         var result = await _brandService.UpdateAsync(id, request);
         return StatusCode(result.StatusCode, result);
     }
@@ -78,6 +84,7 @@ public class BrandController(IBrandService brandService) : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Result>> Delete(int id)
     {
+        _logger.LogInformation("Delete brand called with id {Id}", id);
         var result = await _brandService.DeleteAsync(id);
         return StatusCode(result.StatusCode, result);
     }

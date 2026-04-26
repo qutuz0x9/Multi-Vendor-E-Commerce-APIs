@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MultiVendorECommerce.API.Extensions;
+using MultiVendorECommerce.API.Logging;
 using MultiVendorECommerce.Application.DTOs.CartSession;
 using MultiVendorECommerce.Application.Interfaces.Services;
 using MultiVendorECommerce.Shared.Constants;
@@ -10,9 +11,10 @@ namespace MultiVendorECommerce.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CartSessionController(ICartSessionService cartSessionService) : ControllerBase
+public class CartSessionController(ICartSessionService cartSessionService, IAppLogger<CartSessionController> logger) : ControllerBase
 {
     protected readonly ICartSessionService _cartSessionService = cartSessionService;
+    protected readonly IAppLogger<CartSessionController> _logger = logger;
 
     [HttpGet]
     [Authorize(Roles = Roles.Admin)]
@@ -21,6 +23,7 @@ public class CartSessionController(ICartSessionService cartSessionService) : Con
     [ProducesResponseType(typeof(Result), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<Result<IEnumerable<CartSessionDTO>>>> GetAll()
     {
+        _logger.LogInformation("GetAll cart sessions called");
         var result = await _cartSessionService.GetAllAsync();
         return StatusCode(result.StatusCode, result);
     }
@@ -33,6 +36,7 @@ public class CartSessionController(ICartSessionService cartSessionService) : Con
     [ProducesResponseType(typeof(Result), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Result<CartSessionDTO>>> GetById(Guid id)
     {
+        _logger.LogInformation("GetById cart session called with id {Id}", id);
         var result = await _cartSessionService.GetByIdAsync(id);
         return StatusCode(result.StatusCode, result);
     }
@@ -46,6 +50,7 @@ public class CartSessionController(ICartSessionService cartSessionService) : Con
     public async Task<ActionResult<Result<CartSessionDTO>>> GetMyCart()
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("GetMyCart called for user {UserId}", userId);
         var result = await _cartSessionService.GetMyCartAsync(userId);
         return StatusCode(result.StatusCode, result);
     }
@@ -59,6 +64,7 @@ public class CartSessionController(ICartSessionService cartSessionService) : Con
     public async Task<ActionResult<Result<CartSessionDTO>>> Create()
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("Create cart session called for user {UserId}", userId);
         var result = await _cartSessionService.CreateAsync(userId);
         return StatusCode(result.StatusCode, result);
     }
@@ -72,6 +78,7 @@ public class CartSessionController(ICartSessionService cartSessionService) : Con
     public async Task<ActionResult<Result>> DeleteMyCart()
     {
         var userId = User.GetUserId();
+        _logger.LogInformation("DeleteMyCart called for user {UserId}", userId);
         var result = await _cartSessionService.DeleteAsync(userId);
         return StatusCode(result.StatusCode, result);
     }
