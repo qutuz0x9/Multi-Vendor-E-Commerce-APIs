@@ -45,6 +45,7 @@ public static class InfrastructureServicesExtension
         services.AddScoped<ICartItemService, CartItemService>();
         services.AddScoped<ICustomerAddressService, CustomerAddressService>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<ICartSessionService, CartSessionService>();
 
         return services;
     }
