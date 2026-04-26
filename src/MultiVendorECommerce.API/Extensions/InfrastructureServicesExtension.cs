@@ -43,6 +43,7 @@ public static class InfrastructureServicesExtension
         services.AddScoped<ICookieService, CookieService>();
         services.AddScoped<IVendorOfferService, VendorOfferService>();
         services.AddScoped<ICartItemService, CartItemService>();
+        services.AddScoped<ICustomerAddressService, CustomerAddressService>();
 
         return services;
     }
